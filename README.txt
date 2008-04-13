@@ -2,10 +2,16 @@ Taglib Property Handler: http://sourceforge.net/projects/taglibhandler/
 
 -- Alpha release.
 
-This is an alpha release. It's (intentionally) very hard to install, and, as all of the components are built as debug versions, 
+This is an alpha release. It's hard to install, and, as all of the components are built as debug versions, 
   it should be very slow. Don't use it if you don't know what you're doing.
 
--- Install instructions:
+-- Risky install instructions (Vista only):
+
+1) Run tlhsetup2.exe. It needs Administrator access, and will prompt for it if you have UAC enabled.
+
+   - It is 64-bit Windows aware.
+
+-- Manual install instructions:
 
 1) Register the 32-bit TagLibHandler.dll (from this directory), ie.
 
@@ -30,6 +36,12 @@ This is an alpha release. It's (intentionally) very hard to install, and, as all
 3) It's safe to replace the system associations, such as .mp3, although, at this stage, you will lose functionality by doing so.
 
    You may want to back-up any data you overwrite.
+
+
+-- Lost functionality by using Taglib Handler instead of the Windows Default.
+
+   You will lose: The ability to write to tags, and (for example) the ability to view the Album Artist tag in .WMA files.
+   You will gain: The ability to read id3v2.4 tags with utf-8.
 
 
 -- License (MIT):

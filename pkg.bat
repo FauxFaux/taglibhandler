@@ -1,6 +1,8 @@
 rem @echo off
 if not exist pkg mkdir pkg
 
+copy Debug\tlhsetup2.exe pkg
+copy Debug\tlhsetup2.pdb pkg
 copy Debug\TaglibHandler.dll pkg
 copy Debug\TaglibHandler.pdb pkg
 if not exist pkg\x64 mkdir pkg\x64

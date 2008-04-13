@@ -2,6 +2,8 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TagLibHandler", "TagLibHandler.vcproj", "{DE0C2C95-FBC4-469E-BDEB-7F2CC2B43D82}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tlhsetup2", "setup\tlhsetup2.vcproj", "{AD28C3EB-E7CE-45A9-A241-088D1D93164B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -18,6 +20,12 @@ Global
 		{DE0C2C95-FBC4-469E-BDEB-7F2CC2B43D82}.Release|Win32.Build.0 = Release|Win32
 		{DE0C2C95-FBC4-469E-BDEB-7F2CC2B43D82}.Release|x64.ActiveCfg = Release|x64
 		{DE0C2C95-FBC4-469E-BDEB-7F2CC2B43D82}.Release|x64.Build.0 = Release|x64
+		{AD28C3EB-E7CE-45A9-A241-088D1D93164B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AD28C3EB-E7CE-45A9-A241-088D1D93164B}.Debug|Win32.Build.0 = Debug|Win32
+		{AD28C3EB-E7CE-45A9-A241-088D1D93164B}.Debug|x64.ActiveCfg = Debug|Win32
+		{AD28C3EB-E7CE-45A9-A241-088D1D93164B}.Release|Win32.ActiveCfg = Release|Win32
+		{AD28C3EB-E7CE-45A9-A241-088D1D93164B}.Release|Win32.Build.0 = Release|Win32
+		{AD28C3EB-E7CE-45A9-A241-088D1D93164B}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
