@@ -32,9 +32,16 @@ std::wstring getProgramFiles(bool x64 = false)
 	{
 		wchar_t *path = NULL;
 		HRESULT res = SHGetKnownFolderPath(FOLDERID_ProgramFilesX64, KF_FLAG_DONT_VERIFY, NULL, &path);
-		// This cannot fail like this, but it does, so, use a hard-coded value.
+		// This cannot fail like this, but it does, so, attempt to read from the environment variable.
 		if (FAILED(res))
+		{
+			const wchar_t *envv = _wgetenv(L"ProgramW6432");
+			if (envv != NULL)
+				return envv;
+
+			// Otherwise, give up:
 			return L"c:\\Program Files";
+		}
 
 		makeGuard(CoTaskMemFree, path);
 		return path+suffix;
@@ -367,7 +374,6 @@ DWORD WINAPI extInstallStuff(void *v)
 	return static_cast<ProgressDialog *>(v)->doInstallStuff();
 }
 
-
 class InstallDialog : public CTaskDialogImpl<InstallDialog>
 {
 	std::wstring installloc_x86, installloc_x64;
@@ -377,6 +383,7 @@ public:
     {
         SetWindowTitle(L"Taglib Handler Setup");
         SetMainInstructionText(L"Choose an install type");
+		SetCommonButtons(TDCBF_CANCEL_BUTTON);
 		content_text = L"To work, Taglib Handler needs to be both registered with the system, and registered with the file extensions which it will serve.";
 		SetMainIcon(TD_SHIELD_ICON);
 		SetContentText(content_text.c_str());
