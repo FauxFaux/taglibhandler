@@ -113,23 +113,22 @@ struct REGISTRY_ENTRY
 	DWORD   dwData;
 };
 
+LONG createRegKey(const HKEY base, const LPCWSTR name, HKEY& out)
+{
+	return RegCreateKeyExW(base, name, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &out, NULL);
+}
 
 // Creates a registry key (if needed) and sets the default value of the key
-HRESULT CreateRegKeyAndSetValue(const REGISTRY_ENTRY &pRegistryEntry)
+HRESULT CreateRegKeyAndSetValue(const REGISTRY_ENTRY &pRegistryEntry, 
+	LONG createKey(const HKEY,const LPCWSTR,HKEY &) = &createRegKey)
 {
 	HRESULT hr;
 
 	// create the key, or obtain its handle if it already exists
 	HKEY hKey;
-	LONG lr = RegCreateKeyExW(pRegistryEntry.hkeyRoot,
+	LONG lr = createKey(pRegistryEntry.hkeyRoot,
 		pRegistryEntry.pszKeyName,
-		0,
-		NULL,
-		REG_OPTION_NON_VOLATILE,
-		KEY_ALL_ACCESS,
-		NULL,
-		&hKey,
-		NULL);
+		hKey);
 
 	hr = HRESULT_FROM_WIN32(lr);
 
@@ -174,6 +173,68 @@ HRESULT CreateRegKeyAndSetValue(const REGISTRY_ENTRY &pRegistryEntry)
 	return hr;
 }
 
+HRESULT doRegistration(LPWSTR szModuleName, 
+	LONG createKey(const HKEY,const LPCWSTR,HKEY &) = &createRegKey)
+{
+	// List of property-handler specific registry entries we need to create
+	const REGISTRY_ENTRY rgRegistryEntries[] =
+	{
+		// COM information
+		{
+			HKEY_CLASSES_ROOT,
+			L"CLSID\\" SZ_CLSID_US,
+			NULL,
+			REG_SZ,
+			SZ_TAGLIBPROPERTYHANDLER,
+			0
+		},
+		{
+			HKEY_CLASSES_ROOT,
+			L"CLSID\\" SZ_CLSID_US,
+			L"ManualSafeSave",
+			REG_DWORD,
+			NULL,
+			1
+		},
+		{
+			HKEY_CLASSES_ROOT,
+			L"CLSID\\" SZ_CLSID_US L"\\InProcServer32",
+			NULL,
+			REG_SZ,
+			szModuleName,
+			0
+		},
+		{
+		HKEY_CLASSES_ROOT,
+			L"CLSID\\" SZ_CLSID_US L"\\InProcServer32",
+			L"ThreadingModel",
+			REG_SZ,
+			L"Apartment",
+			0
+		},
+
+		// Shell information
+		{
+			HKEY_LOCAL_MACHINE,
+			SZ_APPROVEDSHELLEXTENSIONS,
+			SZ_CLSID_US,
+			REG_SZ,
+			SZ_TAGLIBPROPERTYHANDLER,
+			0
+		}
+	};
+
+	HRESULT hr;
+	hr = S_OK;
+	for (int i = 0; i < ARRAYSIZE(rgRegistryEntries) && SUCCEEDED(hr); i++)
+	{
+		hr = CreateRegKeyAndSetValue(rgRegistryEntries[i], createKey);
+		if (FAILED(hr))
+			return hr;
+	}
+	return hr;
+}
+
 // Registers this COM server
 STDAPI DllRegisterServer()
 {
@@ -185,61 +246,8 @@ STDAPI DllRegisterServer()
 		hr = HRESULT_FROM_WIN32(GetLastError());
 	else
 	{
-		// List of property-handler specific registry entries we need to create
-		static const REGISTRY_ENTRY rgRegistryEntries[] =
-		{
-			// COM information
-			{
-				HKEY_CLASSES_ROOT,
-					L"CLSID\\" SZ_CLSID_US,
-					NULL,
-					REG_SZ,
-					SZ_TAGLIBPROPERTYHANDLER,
-					0
-			},
-			{
-				HKEY_CLASSES_ROOT,
-					L"CLSID\\" SZ_CLSID_US,
-					L"ManualSafeSave",
-					REG_DWORD,
-					NULL,
-					1
-			},
-			{
-				HKEY_CLASSES_ROOT,
-					L"CLSID\\" SZ_CLSID_US L"\\InProcServer32",
-					NULL,
-					REG_SZ,
-					szModuleName,
-					0
-			},
-			{
-				HKEY_CLASSES_ROOT,
-					L"CLSID\\" SZ_CLSID_US L"\\InProcServer32",
-					L"ThreadingModel",
-					REG_SZ,
-					L"Apartment",
-					0
-			},
-
-			// Shell information
-			{
-				HKEY_LOCAL_MACHINE,
-					SZ_APPROVEDSHELLEXTENSIONS,
-					SZ_CLSID_US,
-					REG_SZ,
-					SZ_TAGLIBPROPERTYHANDLER,
-					0
-			}
-		};
-
-		hr = S_OK;
-		for (int i = 0; i < ARRAYSIZE(rgRegistryEntries) && SUCCEEDED(hr); i++)
-		{
-			hr = CreateRegKeyAndSetValue(rgRegistryEntries[i]);
-			if (FAILED(hr))
-				return hr;
-		}
+		if (FAILED(hr = doRegistration(szModuleName)))
+			return hr;
 
 		// inform Explorer, et al of the new handler
 		SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, 0, 0);
