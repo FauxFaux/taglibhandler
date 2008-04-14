@@ -1,13 +1,18 @@
 ﻿#include "stdafx.h"
 #include "../dllregister.h"
 
-CAppModule _Module;
+#define RANGE(x) (x).begin(), (x).end()
 
+const wchar_t default_guid[] = L"{875CB1A1-0F29-45de-A1AE-CFB4950D0B78}";
+const wchar_t *default_assoc[] = { L"mp3", L"wma" };
+
+CAppModule _Module;
+HWND msgbox = 0;
 HANDLE transaction;
 
 bool onx64 = false;
 
-wchar_t *extensions[] = { L"ogg", L"flac", L"oga", L"mp3", L"mpc", L"wv", L"spx", L"tta", L"wma" };
+const wchar_t *extensions[] = { L"ogg", L"flac", L"oga", L"mp3", L"mpc", L"wv", L"spx", L"tta", L"wma" };
 
 struct NoWoW64
 {
@@ -180,7 +185,7 @@ enum MainButtons
 {
     Button_DefaultInstall = 101,
     Button_AllExts,
-	Button_JustRegister,
+	Button_RestoreDefault,
 };
 
 class ProgressDialog : public CTaskDialogImpl<ProgressDialog>
@@ -210,6 +215,7 @@ public:
 
 	void OnDialogConstructed()
 	{
+		msgbox = m_hWnd;
 		SetProgressBarRange(0, 100);
 		if (INVALID_HANDLE_VALUE == (thread = CreateThread(NULL, 0, &extInstallStuff, this, 0, NULL)))
 			throw win32_error(L"Couldn't set-up installer thread");
@@ -225,11 +231,14 @@ public:
 	void createDirectory(const std::wstring& dir)
 	{
 		if (!CreateDirectoryTransacted(NULL, dir.c_str(), NULL, transaction))
-			throw win32_error(L"Couldn't create directory '" + dir + L"'"); 
-
+		{
+			HRESULT hr = GetLastError();
+			if (hr != ERROR_ALREADY_EXISTS)
+				throw win32_error(L"Couldn't create directory '" + dir + L"'", hr); 
+		}
 	}
 
-	void copyFile(const std::wstring& from, const std::wstring& to, bool failifexists = true)
+	void copyFile(const std::wstring& from, const std::wstring& to, bool failifexists = false)
 	{
 		if (!CopyFileTransacted(from.c_str(), to.c_str(), NULL, NULL, NULL,
 			(failifexists ? COPY_FILE_FAIL_IF_EXISTS : 0), transaction))
@@ -280,20 +289,13 @@ public:
 				throw_if_fail(doRegistration(const_cast<LPWSTR>(dlltargetx64.c_str()), &createKeyTransacted64));
 			SetProgressBarPos(70); Sleep(0);
 
-			if (button == Button_JustRegister)
-			{
-				// Do nothing
-			}
-			else
-			{
-				SetElementText(TDE_MAIN_INSTRUCTION, L"Associating...");
-				const bool restrict = button == Button_DefaultInstall;
-				addToSupportedExtensionsApartFrom(restrict ? extguid_x86 : extguid_t(), false);
-				SetProgressBarPos(82); Sleep(0);
-				if (onx64)
-					addToSupportedExtensionsApartFrom(restrict ? extguid_x64 : extguid_t(), true);
-				SetProgressBarPos(95); Sleep(0);
-			}
+			SetElementText(TDE_MAIN_INSTRUCTION, L"Associating...");
+			const bool restrict = button == Button_DefaultInstall;
+			addToSupportedExtensionsApartFrom(restrict ? extguid_x86 : extguid_t(), false);
+			SetProgressBarPos(80); Sleep(0);
+			if (onx64)
+				addToSupportedExtensionsApartFrom(restrict ? extguid_x64 : extguid_t(), true);
+			SetProgressBarPos(90); Sleep(0);
 
 			SetElementText(TDE_MAIN_INSTRUCTION, L"Confirming...");
 
@@ -304,15 +306,22 @@ public:
 			else if (mb != IDYES)
 				return 0;
 
+			SetElementText(TDE_MAIN_INSTRUCTION, L"Finalising...");
+			Sleep(0);
+
 			if (!CommitTransaction(transaction))
 				throw win32_error(L"Couldn't commit installation");
 
 			SetProgressBarPos(100); Sleep(0);
+			SetElementText(TDE_MAIN_INSTRUCTION, L"Done!");
 			SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, 0, 0);
 			MessageBox(m_hWnd, L"Installation successful!", L"Taglib Handler Setup", MB_OK | MB_ICONINFORMATION);
 		}
 		catch (win32_error& e)
 		{
+			// Prevent another installation launching while we're mid error-report...
+			ModifyFlags(TDF_ALLOW_DIALOG_CANCELLATION, 0);
+			EnableWindow(m_hWnd, FALSE);
 			err = e;
 			return 3;
 		}
@@ -359,6 +368,12 @@ public:
 			TerminateThread(thread, 1);
 			thread = INVALID_HANDLE_VALUE;
 		}
+
+		if (transaction != INVALID_HANDLE_VALUE)
+		{
+			RollbackTransaction(transaction);
+			transaction = INVALID_HANDLE_VALUE;
+		}
 	}
 
 	~ProgressDialog()
@@ -368,6 +383,22 @@ public:
 
 private:
 };
+
+std::wstring hrlist(const std::set<std::wstring>& st)
+{
+	std::wstringstream wss;
+	int i = 0;
+	for (std::set<std::wstring>::const_iterator it = st.begin(); it != st.end(); ++it, ++i)
+	{
+		wss << *it;
+		if (st.size() - i == 2)
+			wss << L" and ";
+		else if (st.size() - i != 1)
+			wss << L", ";
+	}
+
+	return wss.str();
+}
 
 DWORD WINAPI extInstallStuff(void *v)
 {
@@ -448,13 +479,26 @@ public:
 		private:
 			mutable guidname_t names;
 		} namecache32(false), namecache64(true);
+		
+		typedef std::map<std::pair<std::wstring, std::wstring>, std::set<std::wstring> > namesext_t;
+		namesext_t nem;
 
 		for (size_t i=0; i<ARRAYSIZE(extensions); ++i)
-		{
-			expanded_msg = expanded_msg + L"    ◦ " + extensions[i] + L" is currently associated with " + 
-				namecache32.name(extguid_x32[extensions[i]]) + (onx64 ? 
-				L" (32) and " + namecache64.name(extguid_x64[extensions[i]]) + L" (64)" : L"") + L".\n";
-		}
+			nem[std::make_pair(
+				namecache32.name(extguid_x32[extensions[i]]),(onx64 ? 
+				namecache64.name(extguid_x64[extensions[i]]) : L""))].insert(extensions[i]);
+
+		for (namesext_t::const_iterator it = nem.begin(); it != nem.end(); ++it)
+			expanded_msg += L"    ◦ " + hrlist(it->second) + L" currently use" + (it->second.size() == 1 ? L"s" : L"") + L" " + 
+			it->first.first + (onx64 ? (it->first.first == it->first.second ? 
+			L" (both 32 and 64)" : L" (32) and " + it->first.second + L" (64)") : L"") + L".\n";
+
+		const std::wstring def32 = namecache32.name(default_guid), def64 = namecache64.name(default_guid);
+
+		expanded_msg = expanded_msg + L"  • By default, only " + default_assoc[0] + L" and " + default_assoc[1] +
+			L" have handlers, th" + (onx64 ? L"ese are" : L"is is") + L" called '" + 
+			def32 + L"'" + (onx64 ? (def32 == def64 ? L" (both 32 and 64)" : L" and '" + def64 + 
+			L"' (64)") : L"") + L".";
 
 		SetExpandedInformationText(expanded_msg.c_str());
 
@@ -462,7 +506,7 @@ public:
         {
             { Button_DefaultInstall, L"Default Install (recommended)\nRegister with the system and for supported extensions not already claimed" },
             { Button_AllExts, L"Install For All Extensions\nRegister with the system and for all supported extensions" },
-			{ Button_JustRegister, L"Just Register\nJust register with the system" },
+			{ Button_RestoreDefault, L"Uninstall\nRestore the system to the Windows default settings" },
         };
 
         SetButtons(buttons,
@@ -473,6 +517,11 @@ public:
                        TDF_EXPAND_FOOTER_AREA |
 					   TDF_ENABLE_HYPERLINKS);
     }
+
+	void OnDialogConstructed()
+	{
+		msgbox = m_hWnd;
+	}
 
     void OnHyperlinkClicked(PCWSTR url)
     {
@@ -486,13 +535,61 @@ public:
 		throw win32_error(std::wstring(L"Could not open URL '") + url + L"'", result);
     }
 
+	void deletes(bool isx64)
+	{
+		HRESULT hr;
+		for (size_t i=0; i<ARRAYSIZE(extensions); ++i)
+		{
+			hr = RegDeleteKeyTransacted(HKEY_LOCAL_MACHINE, (ps_path + std::wstring(L".") + extensions[i]).c_str(),
+				(isx64 ? KEY_WOW64_64KEY : KEY_WOW64_32KEY), 0, transaction, NULL);
+			if (hr != ERROR_SUCCESS && hr != ERROR_FILE_NOT_FOUND)
+				throw win32_error(L"Couldn't delete entry", hr);
+		}
+	}
+
+	void createDefaults(bool isx64)
+	{
+		for (size_t i=0; i<ARRAYSIZE(default_assoc); ++i)
+		{
+			HKEY keh;
+
+			HRESULT hr = RegCreateKeyTransacted(HKEY_LOCAL_MACHINE, (ps_path + std::wstring(L".") + default_assoc[i]).c_str(), 0, NULL, REG_OPTION_NON_VOLATILE,
+				KEY_ALL_ACCESS | (isx64 ? KEY_WOW64_64KEY : KEY_WOW64_32KEY), NULL, &keh, NULL, transaction, NULL); 
+			if (hr != ERROR_SUCCESS)
+				throw win32_error(L"Couldn't create key", hr);
+			makeGuard(RegCloseKey, keh);
+			throw_if_fail(RegSetValueExW(keh, NULL, 0, REG_SZ, (BYTE*)(&default_guid[0]), ARRAYSIZE(default_guid) * sizeof(wchar_t)));
+		}
+
+	}
+
     bool OnButtonClicked(int buttonId)
     {
         bool closeDialog = false;
 
         switch (buttonId)
         {
-			case Button_JustRegister:
+			case Button_RestoreDefault:
+				{
+					deletes(false);
+					createDefaults(false);
+					if (onx64)
+					{
+						deletes(true);
+						createDefaults(true);
+					}
+					int mb = MessageBox(m_hWnd, L"Are you sure you want to return the system to it's original state? This will lose any changes ever to the relevante property handlers.", 
+						L"Really uninstall Taglib Handler?", MB_YESNO | MB_ICONWARNING);
+
+					if (mb == IDYES)
+					{
+						if (!CommitTransaction(transaction))
+							throw win32_error(L"Couldn't commit uninstall");
+						SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, 0, 0);
+					}
+					closeDialog = true;
+				}
+			break;
 			case Button_DefaultInstall:
             case Button_AllExts:
 			{
@@ -511,7 +608,6 @@ public:
 
         return !closeDialog;
     }
-
 };
 
 int __stdcall wWinMain(HINSTANCE instance,
@@ -542,12 +638,12 @@ int __stdcall wWinMain(HINSTANCE instance,
 	}
 	catch (std::exception& e)
 	{
-		MessageBoxA(0, e.what(), "Fatal error, exiting", MB_ICONERROR | MB_OK);
+		MessageBoxA(msgbox, e.what(), "Fatal error, exiting", MB_ICONERROR | MB_OK);
 		return -1;
 	}
 	catch (win32_error& e)
 	{
-		MessageBox(0, e.what().c_str(), L"Unexpected Win32 error, exiting", MB_ICONERROR | MB_OK);
+		MessageBox(msgbox, e.what().c_str(), L"Unexpected Win32 error, exiting", MB_ICONERROR | MB_OK);
 		return -2;
 	}
 }

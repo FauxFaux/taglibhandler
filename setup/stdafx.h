@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 #include <map>
+#include <set>
 
 // Use explicit constructors for CString
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS
