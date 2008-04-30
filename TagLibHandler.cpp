@@ -23,6 +23,8 @@
 #include <tag.h>
 #include <fileref.h>
 
+#include "exttag.h"
+
 //
 // Releases the specified pointer if not NULL
 //
@@ -107,15 +109,6 @@ private:
 	long _cRef;
 };
 
-std::wstring name(REFPROPERTYKEY thing)
-{
-	wchar_t *str;
-	PSGetNameFromPropertyKey(thing, &str);
-	std::wstring ret(str);
-	CoTaskMemFree(str);
-	return ret;
-}
-
 bool operator==(REFPROPERTYKEY left, REFPROPERTYKEY right)
 {
 	return IsEqualPropertyKey(left, right);
@@ -186,6 +179,11 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 			pPropVar->vt = VT_UI4;
 		}
 	}
+	else if (tag && key == PKEY_Rating)
+	{
+		pPropVar->uintVal = rating(tag);
+		pPropVar->vt = VT_UI4;
+	}
 	else
 		return S_FALSE;
 
@@ -214,7 +212,9 @@ const PROPERTYKEY keys[] = {
 	PKEY_Music_AlbumTitle, PKEY_Music_Artist,
 	PKEY_Music_TrackNumber, PKEY_Music_Genre,
 	PKEY_Title, PKEY_Media_Year, PKEY_Audio_ChannelCount,
-	PKEY_Media_Duration, PKEY_Audio_EncodingBitrate, PKEY_Audio_SampleRate };
+	PKEY_Media_Duration, PKEY_Audio_EncodingBitrate,
+	PKEY_Audio_SampleRate, PKEY_Rating,
+};
 
 HRESULT CTagLibPropertyStore::GetCount(__out DWORD *pcProps)
 {
