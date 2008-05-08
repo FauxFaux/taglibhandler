@@ -29,7 +29,9 @@ private:
 };
 
 const std::wstring suffix(L"\\TaglibHandler\\");
-const wchar_t *ps_path = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\PropertySystem\\PropertyHandlers\\";
+// HKLM:
+const wchar_t ps_path[] = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\PropertySystem\\PropertyHandlers\\";
+const wchar_t kind_path[] = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\explorer\\KindMap\\";
 
 std::wstring getProgramFiles(bool x64 = false)
 {
@@ -331,19 +333,29 @@ public:
 	void addToSupportedExtensionsApartFrom(extguid_t what, bool isx64)
 	{
 		HRESULT hr;
+		HKEY kind_key;
+		throw_if_fail(RegCreateKeyTransacted(HKEY_LOCAL_MACHINE, kind_path, 0, NULL, 
+			REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS | (isx64 ? KEY_WOW64_64KEY : KEY_WOW64_32KEY),
+			NULL, &kind_key, NULL, transaction, NULL));
+		makeGuard(RegCloseKey, kind_key);
+
 		for (size_t i=0; i<ARRAYSIZE(extensions); ++i)
 		{
 			extguid_t::const_iterator it = what.find(extensions[i]);
-			bool inlist = it != what.end();
-			if (inlist && !it->second.empty())
+			if (it != what.end() && !it->second.empty())
 				continue;
 
 			HKEY out;
-			throw_if_fail(RegCreateKeyTransacted(HKEY_LOCAL_MACHINE, (ps_path + std::wstring(L".") + extensions[i]).c_str(), 
+			const std::wstring dotext (std::wstring(L".") + extensions[i]);
+			throw_if_fail(RegCreateKeyTransacted(HKEY_LOCAL_MACHINE, (ps_path + dotext).c_str(), 
 				0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS | (isx64 ? KEY_WOW64_64KEY : KEY_WOW64_32KEY),
 				NULL, &out, NULL, transaction, NULL));
+			makeGuard(RegCloseKey, out);
 			throw_if_fail(RegSetValueEx(out, NULL, 0, REG_SZ, reinterpret_cast<LPBYTE>(SZ_CLSID_US), 
 				ARRAYSIZE(SZ_CLSID_US) * sizeof(wchar_t))); 
+
+			throw_if_fail(RegSetValueEx(kind_key, dotext.c_str(), 0, REG_SZ,
+				reinterpret_cast<LPBYTE>(L"music"), 6 * sizeof(wchar_t)));
 		}
 	}
 
@@ -372,6 +384,7 @@ public:
 		if (transaction != INVALID_HANDLE_VALUE)
 		{
 			RollbackTransaction(transaction);
+			CloseHandle(transaction);
 			transaction = INVALID_HANDLE_VALUE;
 		}
 	}
@@ -578,7 +591,7 @@ public:
 						deletes(true);
 						createDefaults(true);
 					}
-					int mb = MessageBox(m_hWnd, L"Are you sure you want to return the system to it's original state? This will lose any changes ever to the relevante property handlers.", 
+					int mb = MessageBox(m_hWnd, L"Are you sure you want to return the system to it's original state? This will lose any changes ever made to the relevant property handlers.", 
 						L"Really uninstall Taglib Handler?", MB_YESNO | MB_ICONWARNING);
 
 					if (mb == IDYES)
