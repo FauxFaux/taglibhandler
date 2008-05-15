@@ -116,78 +116,92 @@ bool operator==(REFPROPERTYKEY left, REFPROPERTYKEY right)
 
 HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pPropVar)
 {
-	const TagLib::AudioProperties *ap = taglibfile.audioProperties();
-	const TagLib::Tag *tag = taglibfile.tag();
+	try
+	{
+		const TagLib::AudioProperties *ap = taglibfile.audioProperties();
+		const TagLib::Tag *tag = taglibfile.tag();
+		if (tag->isEmpty())
+			tag = NULL;
 
-	if (ap && key == PKEY_Audio_ChannelCount)
-	{
-		pPropVar->uintVal = ap->channels();
-		pPropVar->vt = VT_UI4;
-	}
-	else if (ap && key == PKEY_Media_Duration)
-	{
-		pPropVar->ulVal = ap->length()*10000000;
-		pPropVar->vt = VT_UI8;
-	}
-	else if (ap && key == PKEY_Audio_EncodingBitrate)
-	{
-		pPropVar->uintVal = ap->bitrate()*1024;
-		pPropVar->vt = VT_UI4;
-	}
-	else if (ap && key == PKEY_Audio_SampleRate)
-	{
-		pPropVar->uintVal = ap->sampleRate();
-		pPropVar->vt = VT_UI4;
-	}
-	else if (tag && key == PKEY_Music_AlbumTitle)
-	{
-		pPropVar->vt = VT_BSTR;
-		pPropVar->bstrVal = SysAllocString(tag->album().toWString().c_str());
-	}
-	else if (tag && key == PKEY_Music_Artist)
-	{
-		pPropVar->vt = VT_BSTR;
-		pPropVar->bstrVal = SysAllocString(tag->artist().toWString().c_str());
-	}
-	else if (tag && key == PKEY_Music_Genre)
-	{
-		pPropVar->vt = VT_BSTR;
-		pPropVar->bstrVal = SysAllocString(tag->genre().toWString().c_str());
-	}
-	else if (tag && key == PKEY_Title)
-	{
-		pPropVar->vt = VT_BSTR;
-		pPropVar->pwszVal = SysAllocString(tag->title().toWString().c_str());
-	}
-	else if (tag && key == PKEY_Music_TrackNumber)
-	{
-		if (tag->track() == 0)
-			pPropVar->vt = VT_EMPTY;
-		else
+		if (ap && key == PKEY_Audio_ChannelCount)
 		{
-			pPropVar->uintVal = tag->track();
+			pPropVar->uintVal = ap->channels();
 			pPropVar->vt = VT_UI4;
 		}
-	}
-	else if (tag && key == PKEY_Media_Year)
-	{
-		if (tag->year() == 0)
-			pPropVar->vt = VT_EMPTY;
-		else
+		else if (ap && key == PKEY_Media_Duration)
 		{
-			pPropVar->uintVal = tag->year();
+			pPropVar->ulVal = ap->length()*10000000;
+			pPropVar->vt = VT_UI8;
+		}
+		else if (ap && key == PKEY_Audio_EncodingBitrate)
+		{
+			pPropVar->uintVal = ap->bitrate()*1024;
 			pPropVar->vt = VT_UI4;
 		}
-	}
-	else if (tag && key == PKEY_Rating)
-	{
-		pPropVar->uintVal = rating(tag);
-		pPropVar->vt = VT_UI4;
-	}
-	else
-		return S_FALSE;
+		else if (ap && key == PKEY_Audio_SampleRate)
+		{
+			pPropVar->uintVal = ap->sampleRate();
+			pPropVar->vt = VT_UI4;
+		}
+		else if (tag && key == PKEY_Music_AlbumTitle)
+		{
+			pPropVar->vt = VT_BSTR;
+			pPropVar->bstrVal = SysAllocString(tag->album().toWString().c_str());
+		}
+		else if (tag && key == PKEY_Music_Artist)
+		{
+			pPropVar->vt = VT_BSTR;
+			pPropVar->bstrVal = SysAllocString(tag->artist().toWString().c_str());
+		}
+		else if (tag && key == PKEY_Music_Genre)
+		{
+			pPropVar->vt = VT_BSTR;
+			pPropVar->bstrVal = SysAllocString(tag->genre().toWString().c_str());
+		}
+		else if (tag && key == PKEY_Title)
+		{
+			pPropVar->vt = VT_BSTR;
+			pPropVar->pwszVal = SysAllocString(tag->title().toWString().c_str());
+		}
+		else if (tag && key == PKEY_Music_TrackNumber)
+		{
+			if (tag->track() == 0)
+				pPropVar->vt = VT_EMPTY;
+			else
+			{
+				pPropVar->uintVal = tag->track();
+				pPropVar->vt = VT_UI4;
+			}
+		}
+		else if (tag && key == PKEY_Media_Year)
+		{
+			if (tag->year() == 0)
+				pPropVar->vt = VT_EMPTY;
+			else
+			{
+				pPropVar->uintVal = tag->year();
+				pPropVar->vt = VT_UI4;
+			}
+		}
+		else if (tag && key == PKEY_Rating)
+		{
+			pPropVar->uintVal = rating(tag);
+			pPropVar->vt = VT_UI4;
+		}
+		else
+			return S_FALSE;
 
-	return S_OK;
+		return S_OK;
+	}
+	catch (...)
+	{
+		// This has only ever been reached when taglib gives us a non-null but invalid tag;
+		//  not reproducable. Worse, the exception is only when wstring's constructor has
+		//  caught it, there's a chance of a complete crash here, otoh, with a non-abort(),
+		//  the app/system may deal gracefully.
+		OutputDebugString(L"TaglibHandler encountered unexpected exception in GetValue");
+		return ERROR_INTERNAL_ERROR;
+	}
 }
 
 HRESULT CTagLibPropertyStore::CreateInstance(REFIID riid, void **ppv)
