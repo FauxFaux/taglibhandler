@@ -185,7 +185,7 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 		}
 		else if (tag && key == PKEY_Rating)
 		{
-			pPropVar->uintVal = rating(tag);
+			pPropVar->uintVal = rating(taglibfile);
 			pPropVar->vt = VT_UI4;
 		}
 		else
