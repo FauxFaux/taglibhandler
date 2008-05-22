@@ -4,6 +4,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TagLibHandler", "TagLibHand
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tlhsetup2", "setup\tlhsetup2.vcproj", "{AD28C3EB-E7CE-45A9-A241-088D1D93164B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "propdump", "propdump\propdump.vcproj", "{EC5DAAFF-7257-426D-8346-331DF97A8A15}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -26,6 +28,12 @@ Global
 		{AD28C3EB-E7CE-45A9-A241-088D1D93164B}.Release|Win32.ActiveCfg = Release|Win32
 		{AD28C3EB-E7CE-45A9-A241-088D1D93164B}.Release|Win32.Build.0 = Release|Win32
 		{AD28C3EB-E7CE-45A9-A241-088D1D93164B}.Release|x64.ActiveCfg = Release|Win32
+		{EC5DAAFF-7257-426D-8346-331DF97A8A15}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EC5DAAFF-7257-426D-8346-331DF97A8A15}.Debug|Win32.Build.0 = Debug|Win32
+		{EC5DAAFF-7257-426D-8346-331DF97A8A15}.Debug|x64.ActiveCfg = Debug|Win32
+		{EC5DAAFF-7257-426D-8346-331DF97A8A15}.Release|Win32.ActiveCfg = Release|Win32
+		{EC5DAAFF-7257-426D-8346-331DF97A8A15}.Release|Win32.Build.0 = Release|Win32
+		{EC5DAAFF-7257-426D-8346-331DF97A8A15}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

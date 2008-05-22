@@ -10,6 +10,7 @@
 #include <id3v1tag.h>
 #include <id3v2tag.h>
 #include <textidentificationframe.h>
+#include <unknownframe.h>
 #include <xiphcomment.h>
 #include <mpegfile.h>
 
@@ -116,22 +117,19 @@ unsigned char readRating(const ID3v2::Tag *tag)
 
 	const ID3v2::FrameList &fl = tag->frameListMap()["POPM"];
 	for (ID3v2::FrameList::ConstIterator it = fl.begin(); it != fl.end(); ++it)
-	{
-		const ByteVector &s = (*it)->render();
+		if (ID3v2::UnknownFrame *fr = dynamic_cast<ID3v2::UnknownFrame *>(*it))
+		{
+			const ByteVector &s = fr->data();
 
-		// Locate the null byte.
-		ByteVector::ConstIterator bit = s.begin();
-		std::advance(bit, 10); // POPM\0\0\0.\0\0email@address\0{rating}
-		// 10 == distance from start to data     ^
+			// Locate the null byte.
+			ByteVector::ConstIterator sp = std::find(s.begin(), s.end(), 0);
 
-		ByteVector::ConstIterator sp = std::find(bit, s.end(), 0);
-
-		// If we found it, and the string continues, at least another character, 
-		//  the continued character is the rating byte.
-		if (sp != s.end() && ++sp != s.end())
-			return static_cast<unsigned char>(
-				static_cast<unsigned char>(*sp)*100/255.f);
-	}
+			// If we found it, and the string continues, at least another character, 
+			//  the continued character is the rating byte.
+			if (sp != s.end() && ++sp != s.end())
+				return static_cast<unsigned char>(
+					static_cast<unsigned char>(*sp)*100/255.f);
+		}
 	return normaliseRating(readTXXXString(tag, "rating").toInt());
 }
 
