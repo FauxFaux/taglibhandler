@@ -3,6 +3,8 @@
 
 #define RANGE(x) (x).begin(), (x).end()
 
+using boost::assign::map_list_of;
+
 const wchar_t default_guid[] = L"{875CB1A1-0F29-45de-A1AE-CFB4950D0B78}";
 const wchar_t *default_assoc[] = { L"mp3", L"wma" };
 
@@ -32,6 +34,28 @@ const std::wstring suffix(L"\\TaglibHandler\\");
 // HKLM:
 const wchar_t ps_path[] = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\PropertySystem\\PropertyHandlers\\";
 const wchar_t kind_path[] = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\explorer\\KindMap\\";
+
+// HKCR:
+const wchar_t sfa_path[] = L"SystemFileAssociations\\";
+typedef const std::map<const wchar_t*, const wchar_t*> wcwcmap;
+wcwcmap sfa_defaults = map_list_of
+	(L"ExtendedTileInfo", L"prop:System.ItemType;System.Size;System.Music.Artist;System.Media.Duration;System.OfflineAvailability")
+	(L"FullDetails", L"prop:System.PropGroup.Description;System.Title;System.Media.SubTitle;System.Rating;"
+		L"System.Comment;System.PropGroup.Media;System.Music.Artist;System.Music.AlbumArtist;System.Music.AlbumTitle;"
+		L"System.Media.Year;System.Music.TrackNumber;System.Music.Genre;System.Media.Duration;System.PropGroup.Audio;"
+		L"System.Audio.EncodingBitrate;System.PropGroup.Origin;System.Media.Publisher;System.Media.EncodedBy;"
+		L"System.Media.AuthorUrl;System.Copyright;System.PropGroup.Content;System.ParentalRatingReason;System.Music.Composer;"
+		L"System.Music.Conductor;System.Music.ContentGroupDescription;System.Music.Mood;System.Music.PartOfSet;"
+		L"System.Music.InitialKey;System.Music.BeatsPerMinute;System.DRM.IsProtected;System.PropGroup.FileSystem;"
+		L"System.ItemNameDisplay;System.ItemType;System.ItemFolderPathDisplay;System.DateCreated;System.DateModified;"
+		L"System.Size;System.FileAttributes;System.OfflineAvailability;System.OfflineStatus;System.SharedWith;"
+		L"System.FileOwner;System.ComputerName")
+	(L"InfoTip", L"prop:System.ItemType;System.Size;System.Music.Artist;System.Media.Duration;System.OfflineAvailability")
+	(L"PreviewDetails", L"prop:System.Music.Artist;System.Music.AlbumTitle;System.Music.Genre;*System.Media.Duration;"
+		L"System.Rating;System.Media.Year;*System.Size;System.Music.TrackNumber;System.Music.AlbumArtist;System.Title;"
+		L"*System.Audio.EncodingBitrate;*System.DateModified;System.Keywords;System.ParentalRating;*System.OfflineAvailability;"
+		L"*System.OfflineStatus;*System.DateCreated;*System.SharedWith")
+	;
 
 std::wstring getProgramFiles(bool x64 = false)
 {
@@ -356,6 +380,18 @@ public:
 
 			throw_if_fail(RegSetValueEx(kind_key, dotext.c_str(), 0, REG_SZ,
 				reinterpret_cast<LPBYTE>(L"music"), 6 * sizeof(wchar_t)));
+
+			HKEY sfa_key;
+			throw_if_fail(RegCreateKeyTransacted(HKEY_CLASSES_ROOT, (sfa_path + dotext).c_str(), 0, NULL, 
+				REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS | (isx64 ? KEY_WOW64_64KEY : KEY_WOW64_32KEY),
+				NULL, &sfa_key, NULL, transaction, NULL));
+			makeGuard(RegCloseKey, kind_key);
+
+			for (wcwcmap::const_iterator it = sfa_defaults.begin(); it != sfa_defaults.end(); ++it)
+				throw_if_fail(RegSetValueEx(sfa_key, it->first, 0, REG_SZ,
+					reinterpret_cast<LPBYTE>(const_cast<wchar_t*>(it->second)), wcslen(it->second) * sizeof(wchar_t)));
+
+
 		}
 	}
 

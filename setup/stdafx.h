@@ -33,6 +33,7 @@
 #include <boost/preprocessor.hpp>
 #include <boost/preprocessor/wstringize.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/assign.hpp>
 
 #include <loki/scopeguard.h>
 #define makeGuard(...) Loki::ScopeGuard BOOST_PP_CAT(guard,__LINE__) = Loki::MakeGuard(__VA_ARGS__); BOOST_PP_CAT(guard,__LINE__);

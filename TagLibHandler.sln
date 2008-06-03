@@ -6,6 +6,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tlhsetup2", "setup\tlhsetup
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "propdump", "propdump\propdump.vcproj", "{EC5DAAFF-7257-426D-8346-331DF97A8A15}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "exttagtest", "exttagtest\exttagtest.vcproj", "{59364043-893F-4B54-9C34-0B9D35CD4A69}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -34,6 +36,12 @@ Global
 		{EC5DAAFF-7257-426D-8346-331DF97A8A15}.Release|Win32.ActiveCfg = Release|Win32
 		{EC5DAAFF-7257-426D-8346-331DF97A8A15}.Release|Win32.Build.0 = Release|Win32
 		{EC5DAAFF-7257-426D-8346-331DF97A8A15}.Release|x64.ActiveCfg = Release|Win32
+		{59364043-893F-4B54-9C34-0B9D35CD4A69}.Debug|Win32.ActiveCfg = Debug|Win32
+		{59364043-893F-4B54-9C34-0B9D35CD4A69}.Debug|Win32.Build.0 = Debug|Win32
+		{59364043-893F-4B54-9C34-0B9D35CD4A69}.Debug|x64.ActiveCfg = Debug|Win32
+		{59364043-893F-4B54-9C34-0B9D35CD4A69}.Release|Win32.ActiveCfg = Release|Win32
+		{59364043-893F-4B54-9C34-0B9D35CD4A69}.Release|Win32.Build.0 = Release|Win32
+		{59364043-893F-4B54-9C34-0B9D35CD4A69}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

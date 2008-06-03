@@ -143,6 +143,18 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 			pPropVar->uintVal = ap->sampleRate();
 			pPropVar->vt = VT_UI4;
 		}
+		else if (tag && key == PKEY_Music_AlbumArtist)
+		{
+			try
+			{
+				pPropVar->bstrVal = SysAllocString(albumArtist(taglibfile).c_str());
+				pPropVar->vt = VT_BSTR;
+			}
+			catch (std::domain_error &)
+			{
+				pPropVar->vt = VT_EMPTY;
+			}
+		}
 		else if (tag && key == PKEY_Music_AlbumTitle)
 		{
 			pPropVar->vt = VT_BSTR;
@@ -227,7 +239,7 @@ const PROPERTYKEY keys[] = {
 	PKEY_Music_TrackNumber, PKEY_Music_Genre,
 	PKEY_Title, PKEY_Media_Year, PKEY_Audio_ChannelCount,
 	PKEY_Media_Duration, PKEY_Audio_EncodingBitrate,
-	PKEY_Audio_SampleRate, PKEY_Rating,
+	PKEY_Audio_SampleRate, PKEY_Rating, PKEY_Music_AlbumArtist,
 };
 
 HRESULT CTagLibPropertyStore::GetCount(__out DWORD *pcProps)
