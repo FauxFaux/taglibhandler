@@ -18,6 +18,16 @@ int main()
 #if 1
 int main()
 {
+	const char *path = "../propdump/t.mp3";
+	TagLib::FileRef r(path);
+	wstrvec_t ws = keywords(r);
+	ws;
+}
+#endif
+
+#if 0
+int main()
+{
 	const char *path = "../propdump/tw.wma";
 	TagLib::FileRef r(path);
 	std::wstring q = albumArtist(r);

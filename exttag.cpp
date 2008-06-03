@@ -17,6 +17,8 @@
 
 using namespace TagLib;
 
+#define RANGE(x) (x).begin(), (x).end()
+
 // === How this file works. ===
 //  - Functions like uchar rating(TagLib::FileRef &) are exposed.
 //  - These take the fileref's tag, and attempt to cast it to all of the TAG_CLASSES
@@ -204,6 +206,66 @@ std::wstring readalbumArtist(const Ogg::XiphComment *tag)
 	throw std::domain_error("no xiph");
 }
 
+wstrvec_t toVector(StringList::ConstIterator beg, StringList::ConstIterator end)
+{
+	StringList::ConstIterator it = beg;
+	wstrvec_t ret;
+	while (it != end)
+		ret.push_back(it++->toWString());
+	return ret;
+}
+
+wstrvec_t toVector(const StringList &lst)
+{
+	return toVector(RANGE(lst));
+}
+
+wstrvec_t readkeywords(const APE::Tag *tag)
+{
+	return toVector(tag->itemListMap()[L"Keywords"].values());
+}
+
+wstrvec_t readkeywords(const ASF::Tag *tag)
+{
+	const char *name = "WM/Category";
+
+	// Ew ew ew.
+	const ASF::AttributeListMap &alm = const_cast<ASF::Tag *>(tag)->attributeListMap();
+	if (alm.contains(name))
+	{
+		ASF::AttributeList lst = alm[name];
+		wstrvec_t ret; ret.reserve(lst.size());
+		for (ASF::AttributeList::ConstIterator it = lst.begin(); it != lst.end(); ++it)
+			ret.push_back(it->toString().toWString());
+		return ret;
+	}
+
+	throw std::domain_error("no asf");
+}
+
+wstrvec_t readkeywords(const ID3v2::Tag *tag)
+{
+	const ID3v2::FrameList &fl = tag->frameListMap()["TXXX"];
+	for (ID3v2::FrameList::ConstIterator it = fl.begin(); it != fl.end(); ++it)
+	{
+		const ID3v2::TextIdentificationFrame *tif = dynamic_cast<const ID3v2::TextIdentificationFrame *>(*it);
+		const StringList sl = tif->fieldList();
+		if (sl.size() >= 2)
+			if (is_iequal(sl[0].toWString(), L"keywords"))
+			{
+				StringList::ConstIterator oo = sl.begin();
+				++oo;
+				return toVector(oo, sl.end());
+			}
+	}
+	return wstrvec_t();
+}
+
+wstrvec_t readkeywords(const Ogg::XiphComment *tag)
+{
+	return toVector(tag->fieldListMap()["KEYWORDS"]);
+}
 
 READER_FUNC(unsigned char, rating, return RATING_UNRATED_SET)
 READER_FUNC(std::wstring, albumArtist, throw std::domain_error("not good"))
+READER_FUNC(wstrvec_t, keywords, return wstrvec_t())

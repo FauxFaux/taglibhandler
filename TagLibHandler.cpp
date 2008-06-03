@@ -114,6 +114,24 @@ bool operator==(REFPROPERTYKEY left, REFPROPERTYKEY right)
 	return IsEqualPropertyKey(left, right);
 }
 
+struct Dbstr
+{
+	const BSTR val;
+	Dbstr(const std::wstring &str) : val(SysAllocString(str.c_str()))
+	{
+	}
+
+	~Dbstr()
+	{
+		SysFreeString(val);
+	}
+
+	operator BSTR()
+	{
+		return val;
+	}
+};
+
 HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pPropVar)
 {
 	try
@@ -200,6 +218,28 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 			pPropVar->uintVal = rating(taglibfile);
 			pPropVar->vt = VT_UI4;
 		}
+		else if (tag && key == PKEY_Keywords)
+		{
+			const wstrvec_t keys = keywords(taglibfile);
+			if (!keys.empty())
+			{
+				pPropVar->vt = VT_ARRAY | VT_BSTR;
+				SAFEARRAYBOUND aDim[1] = {};
+
+				aDim[0].cElements = keys.size();
+
+				pPropVar->parray = SafeArrayCreate(VT_BSTR, 1, aDim);
+				if (!pPropVar->parray)
+					return E_OUTOFMEMORY;
+
+				long aLong[1] = {};
+				for (wstrvec_t::const_iterator it = keys.begin(); it != keys.end(); ++it)
+				{
+					SafeArrayPutElement(pPropVar->parray, aLong, Dbstr(*it));
+					++aLong[0];
+				}
+			}
+		}
 		else
 			return S_FALSE;
 
@@ -212,6 +252,7 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 		//  caught it, there's a chance of a complete crash here, otoh, with a non-abort(),
 		//  the app/system may deal gracefully.
 		OutputDebugString(L"TaglibHandler encountered unexpected exception in GetValue");
+		pPropVar->vt = VT_EMPTY;
 		return ERROR_INTERNAL_ERROR;
 	}
 }
@@ -240,6 +281,7 @@ const PROPERTYKEY keys[] = {
 	PKEY_Title, PKEY_Media_Year, PKEY_Audio_ChannelCount,
 	PKEY_Media_Duration, PKEY_Audio_EncodingBitrate,
 	PKEY_Audio_SampleRate, PKEY_Rating, PKEY_Music_AlbumArtist,
+	PKEY_Keywords,
 };
 
 HRESULT CTagLibPropertyStore::GetCount(__out DWORD *pcProps)
