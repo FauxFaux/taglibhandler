@@ -11,6 +11,7 @@
 #define NOMINMAX
 
 #include <string>
+#include <sstream>
 
 #include <initguid.h>
 #include <mmdeviceapi.h>
@@ -245,10 +246,38 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 			pPropVar->bstrVal = SysAllocString(tag->comment().toWString().c_str());
 			pPropVar->vt = VT_BSTR;
 		}
+		else if (tag && key == PKEY_Media_DateReleased)
+		{
+			SYSTEMTIME date = releasedate(taglibfile);
+			// Attempt to recover in case of failure.:
+			if (date.wYear != 0)
+			{
+				std::vector<WCHAR> buf;
+#define GDF(x)  GetDateFormat(LOCALE_USER_DEFAULT, DATE_SHORTDATE, &date, NULL, x, static_cast<int>(buf.size()))
+				buf.resize(GDF(NULL));
+				if (GDF(&buf.at(0)))
+				{
+					pPropVar->bstrVal = SysAllocString(&buf.at(0));
+					pPropVar->vt = VT_BSTR;
+				}
+			}
+			else
+				if (int year = tag->year())
+				{
+					std::wstringstream ss; ss << year;
+					pPropVar->bstrVal = SysAllocString(ss.str().c_str());
+					pPropVar->vt = VT_BSTR;
+				}
+		}
 		else
 			return S_FALSE;
 
 		return S_OK;
+	}
+	catch (std::exception &e)
+	{
+		OutputDebugStringA(e.what());
+		return ERROR_INTERNAL_ERROR;
 	}
 	catch (...)
 	{
@@ -286,7 +315,7 @@ const PROPERTYKEY keys[] = {
 	PKEY_Title, PKEY_Media_Year, PKEY_Audio_ChannelCount,
 	PKEY_Media_Duration, PKEY_Audio_EncodingBitrate,
 	PKEY_Audio_SampleRate, PKEY_Rating, PKEY_Music_AlbumArtist,
-	PKEY_Keywords, PKEY_Comment,
+	PKEY_Keywords, PKEY_Comment, PKEY_Media_DateReleased
 };
 
 HRESULT CTagLibPropertyStore::GetCount(__out DWORD *pcProps)

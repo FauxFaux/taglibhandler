@@ -15,7 +15,7 @@ int main()
 }
 #endif
 
-#if 1
+#if 0
 int main()
 {
 	const char *path = "../propdump/t.mp3";
@@ -31,5 +31,15 @@ int main()
 	const char *path = "../propdump/tw.wma";
 	TagLib::FileRef r(path);
 	std::wstring q = albumArtist(r);
+}
+#endif
+
+#if 1
+int main()
+{
+	const char *path = "M:\\music\\Artists\\S\\Sash!\\Life Goes On\\01. Sash! - La Primavera.mp3";
+	TagLib::FileRef r(path);
+	SYSTEMTIME s = releasedate(r);
+
 }
 #endif

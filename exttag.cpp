@@ -82,7 +82,9 @@ bool is_iequal(const std::wstring& l, const std::wstring& r)
 	return true;
 }
 
-const String readTXXXString(const ID3v2::Tag *tag, const String &name)
+typedef std::vector<TagLib::String> tlstrvec_t;
+
+const tlstrvec_t readTXXXStrings(const ID3v2::Tag *tag, const String &name)
 {
 	const ID3v2::FrameList &fl = tag->frameListMap()["TXXX"];
 	for (ID3v2::FrameList::ConstIterator it = fl.begin(); it != fl.end(); ++it)
@@ -91,12 +93,18 @@ const String readTXXXString(const ID3v2::Tag *tag, const String &name)
 		const StringList sl = tif->fieldList();
 		if (sl.size() >= 2)
 			if (is_iequal(sl[0].toWString(), name.toWString()))
-				return sl[1];
+				return tlstrvec_t(++sl.begin(), sl.end());
 	}
-
-	return emptyString;
+	return tlstrvec_t();
 }
 
+const String readTXXXString(const ID3v2::Tag *tag, const String &name)
+{
+	const tlstrvec_t sl = readTXXXStrings(tag, name);
+	if (!sl.size())
+		return emptyString;
+	return sl[0];
+}
 
 unsigned char normaliseRating(int rat)
 {
@@ -133,6 +141,20 @@ unsigned char readrating(const ASF::Tag *tag)
 	return normaliseRating(tag->rating().toInt());
 }
 
+#define FOR_EACH_ID3_FRAME_UNKNOWN(name) {                                      \
+	const ID3v2::FrameList &fl = tag->frameListMap()[name];                     \
+	for (ID3v2::FrameList::ConstIterator it = fl.begin(); it != fl.end(); ++it) \
+		if (ID3v2::UnknownFrame *fr = dynamic_cast<ID3v2::UnknownFrame *>(*it)) \
+		{                                                                       \
+			const ByteVector &s = fr->data();
+
+#define FOR_EACH_ID3_FRAME_TIF(name) {                                          \
+	const ID3v2::FrameList &fl = tag->frameListMap()[name];                     \
+	for (ID3v2::FrameList::ConstIterator it = fl.begin(); it != fl.end(); ++it) \
+		if (ID3v2::TextIdentificationFrame *fr = dynamic_cast<ID3v2::TextIdentificationFrame *>(*it))
+			
+
+
 unsigned char readrating(const ID3v2::Tag *tag)
 {
 	// First attempt to read from 4.17 Popularimeter. (http://www.id3.org/id3v2.4.0-frames)
@@ -142,12 +164,7 @@ unsigned char readrating(const ID3v2::Tag *tag)
     // Counter         $xx xx xx xx (xx ...)
 	// The rating is 1-255 where 1 is worst and 255 is best. 0 is unknown.
 
-	const ID3v2::FrameList &fl = tag->frameListMap()["POPM"];
-	for (ID3v2::FrameList::ConstIterator it = fl.begin(); it != fl.end(); ++it)
-		if (ID3v2::UnknownFrame *fr = dynamic_cast<ID3v2::UnknownFrame *>(*it))
-		{
-			const ByteVector &s = fr->data();
-
+	FOR_EACH_ID3_FRAME_UNKNOWN("POPM")
 			// Locate the null byte.
 			ByteVector::ConstIterator sp = std::find(s.begin(), s.end(), 0);
 
@@ -157,6 +174,7 @@ unsigned char readrating(const ID3v2::Tag *tag)
 				return static_cast<unsigned char>(
 					static_cast<unsigned char>(*sp)*100/255.f);
 		}
+	}
 	return normaliseRating(readTXXXString(tag, "rating").toInt());
 }
 
@@ -191,10 +209,9 @@ std::wstring readalbumArtist(const ASF::Tag *tag)
 
 std::wstring readalbumArtist(const ID3v2::Tag *tag)
 {
-	const ID3v2::FrameList &fl = tag->frameListMap()["TPE2"];
-	for (ID3v2::FrameList::ConstIterator it = fl.begin(); it != fl.end(); ++it)
-		if (ID3v2::TextIdentificationFrame *fr = dynamic_cast<ID3v2::TextIdentificationFrame *>(*it))
-			return fr->toString().toWString();
+	FOR_EACH_ID3_FRAME_TIF("TPE2")
+		return fr->toString().toWString();
+	}
 	throw std::domain_error("no id3v2");
 }
 
@@ -212,6 +229,15 @@ wstrvec_t toVector(StringList::ConstIterator beg, StringList::ConstIterator end)
 	wstrvec_t ret;
 	while (it != end)
 		ret.push_back(it++->toWString());
+	return ret;
+}
+
+wstrvec_t toVector(const tlstrvec_t &vec)
+{
+	wstrvec_t ret;
+	ret.reserve(vec.size());
+	for (std::vector<TagLib::String>::const_iterator it = vec.begin(); it != vec.end(); ++it)
+		ret.push_back(it->toWString());
 	return ret;
 }
 
@@ -266,6 +292,115 @@ wstrvec_t readkeywords(const Ogg::XiphComment *tag)
 	return toVector(tag->fieldListMap()["KEYWORDS"]);
 }
 
+SYSTEMTIME parseDate(const wstrvec_t &vec)
+{
+	if (!vec.size())
+		return SYSTEMTIME();
+
+	for (wstrvec_t::const_iterator it = vec.begin(); it != vec.end(); ++it)
+		// more than just the year, fill it in full.
+		if (it->size() >= string("xxxx-xx-xx").size())
+		{
+			try
+			{
+				SYSTEMTIME full = {};
+				full.wYear = boost::lexical_cast<int>(it->substr(0,4));
+				full.wMonth = boost::lexical_cast<int>(it->substr(5,2));
+				full.wDay = boost::lexical_cast<int>(it->substr(8,2));
+				return full;
+			}
+			catch (boost::bad_lexical_cast &)
+			{
+				OutputDebugString((L"TagLibHandler: '" + *it + L"' failed to full parse as a date").c_str());
+			}
+		}
+
+	// Abandon, and just go with the year.
+	SYSTEMTIME ret = {};
+	ret.wYear = boost::lexical_cast<int>(vec.at(0));
+	return ret;
+}
+
+SYSTEMTIME readreleasedate(const APE::Tag *tag)
+{
+	return parseDate(toVector(tag->itemListMap()[L"Year"].values()));
+}
+
+SYSTEMTIME readreleasedate(const ASF::Tag *tag)
+{
+	const char *name = "WM/Year";
+
+	// Ew ew ew.
+	const ASF::AttributeListMap &alm = const_cast<ASF::Tag *>(tag)->attributeListMap();
+	if (alm.contains(name))
+	{
+		ASF::AttributeList lst = alm[name];
+		wstrvec_t ret; ret.reserve(lst.size());
+		for (ASF::AttributeList::ConstIterator it = lst.begin(); it != lst.end(); ++it)
+			ret.push_back(it->toString().toWString());
+		return parseDate(ret);
+	}
+
+	return SYSTEMTIME();
+}
+
+// I wrote the code below to attempt to recover from v2.3 tags (D:), and taglib just destroys all the data. \o/
+// Never mind, leave it in, why not? The code is brittle anyway.
+SYSTEMTIME readreleasedate(const ID3v2::Tag *tag)
+{
+	// Attempt to read the (sane) id3v2.4 tag:
+	wstrvec_t drcs;
+	FOR_EACH_ID3_FRAME_TIF("TDRC")
+		drcs.push_back(fr->toString().toWString());
+	}
+
+	SYSTEMTIME point4 = parseDate(drcs);
+	if (point4.wYear)
+		return point4;
+
+	// Abandon all hope and try to deal with 2.3's failure:
+	tlstrvec_t years, days;
+	FOR_EACH_ID3_FRAME_TIF("TYER")
+		years.push_back(fr->toString());
+	}
+
+	// No data, abort:
+	if (!years.size())
+		return SYSTEMTIME();
+
+	// DDMM, guaranteed 4 chars long.
+	FOR_EACH_ID3_FRAME_TIF("TDAT")
+		days.push_back(fr->toString());
+	}
+
+	// If there are mismathcing year and day numbers, we can't do anything clever, return the first year.
+	if (years.size() != days.size())
+	{
+		SYSTEMTIME ret = {};
+		ret.wYear = years[0].toInt();
+		return ret;
+	}
+
+	wstrvec_t composed;
+	composed.reserve(years.size());
+
+	tlstrvec_t::const_iterator dit = days.begin();
+	for (tlstrvec_t::const_iterator yit = years.begin(); yit != years.end(); ++yit, ++dit)
+	{
+		const std::wstring day = dit->toWString();
+		// This could throw if the TDAT tag is misformed.
+		composed.push_back(yit->toWString() + L"-" + day.substr(2,2) + L"-" + day.substr(0,2));
+	}
+	return parseDate(composed);
+}
+
+SYSTEMTIME readreleasedate(const Ogg::XiphComment *tag)
+{
+	return parseDate(toVector(tag->fieldListMap()["DATE"]));
+}
+
+
 READER_FUNC(unsigned char, rating, return RATING_UNRATED_SET)
 READER_FUNC(std::wstring, albumArtist, throw std::domain_error("not good"))
 READER_FUNC(wstrvec_t, keywords, return wstrvec_t())
+READER_FUNC(SYSTEMTIME, releasedate, return SYSTEMTIME())
