@@ -240,7 +240,8 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 		{
 			SYSTEMTIME date = releasedate(taglibfile);
 			// Attempt to recover in case of failure.:
-			if (date.wYear != 0)
+			// GetDateFormat, at least in my locale, fails if at least the day, month and year aren't set:
+			if (date.wMonth != 0 && date.wDay != 0)
 			{
 				std::vector<WCHAR> buf;
 #define GDF(x)  GetDateFormat(LOCALE_USER_DEFAULT, DATE_SHORTDATE, &date, NULL, x, static_cast<int>(buf.size()))

@@ -1,5 +1,6 @@
 #include "../exttag.h"
 #include <windows.h>
+#include <iostream>
 
 #if 0
 int main()
@@ -34,7 +35,7 @@ int main()
 }
 #endif
 
-#if 1
+#if 0
 int main()
 {
 	const char *path = "M:\\music\\Artists\\S\\Sash!\\Life Goes On\\01. Sash! - La Primavera.mp3";
@@ -42,4 +43,16 @@ int main()
 	SYSTEMTIME s = releasedate(r);
 
 }
+#endif
+
+#if 1
+int main()
+{
+	SYSTEMTIME s = {};
+	s.wYear = 2003;
+	WCHAR buf[MAX_PATH] = {};
+	GetDateFormat(LOCALE_USER_DEFAULT, DATE_SHORTDATE, &s, NULL, &buf[0], MAX_PATH);
+	std::wcout << buf;
+}
+
 #endif
