@@ -240,6 +240,11 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 				}
 			}
 		}
+		else if (tag && key == PKEY_Comment)
+		{
+			pPropVar->bstrVal = SysAllocString(tag->comment().toWString().c_str());
+			pPropVar->vt = VT_BSTR;
+		}
 		else
 			return S_FALSE;
 
@@ -281,7 +286,7 @@ const PROPERTYKEY keys[] = {
 	PKEY_Title, PKEY_Media_Year, PKEY_Audio_ChannelCount,
 	PKEY_Media_Duration, PKEY_Audio_EncodingBitrate,
 	PKEY_Audio_SampleRate, PKEY_Rating, PKEY_Music_AlbumArtist,
-	PKEY_Keywords,
+	PKEY_Keywords, PKEY_Comment,
 };
 
 HRESULT CTagLibPropertyStore::GetCount(__out DWORD *pcProps)
@@ -372,7 +377,6 @@ struct IStreamAccessor : public TagLib::FileAccessor
 	{
 		return true;
 	}
-
 };
 
 // Initialize populates the internal value cache with data from the specified stream
