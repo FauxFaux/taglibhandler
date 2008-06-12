@@ -20,3 +20,5 @@ std::wstring composer(const TagLib::FileRef &fileref);
 std::wstring conductor(const TagLib::FileRef &fileref);
 std::wstring subtitle(const TagLib::FileRef &fileref);
 std::wstring label(const TagLib::FileRef &fileref);
+std::wstring producer(const TagLib::FileRef &fileref);
+std::wstring mood(const TagLib::FileRef &fileref);

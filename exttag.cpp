@@ -505,6 +505,55 @@ std::wstring readsubtitle(const Ogg::XiphComment *tag)
 	return readString(tag, "SUBTITLE");
 }
 
+std::wstring readproducer(const APE::Tag *tag)
+{
+	return readString(tag, L"Producer");
+}
+
+std::wstring readproducer(const ASF::Tag *tag)
+{
+	return readString(tag, "WM/Producer");
+}
+
+// TIPL is a set of pairs (a map), even (from/including zero) -> key, odd -> value.
+std::wstring readproducer(const ID3v2::Tag *tag)
+{
+	const ID3v2::FrameList &fl = tag->frameListMap()["TIPL"];
+	for (size_t i = 0; i < fl.size(); i+=2)
+		if (ID3v2::TextIdentificationFrame *fr = dynamic_cast<ID3v2::TextIdentificationFrame *>(fl[i]))
+			if (fr->toString() == L"producer")
+				return dynamic_cast<ID3v2::TextIdentificationFrame *>(fl[i+1])
+					->toString().toWString();
+	throw std::domain_error("no id3v2");
+}
+
+std::wstring readproducer(const Ogg::XiphComment *tag)
+{
+	return readString(tag, "PRODUCER");
+}
+
+std::wstring readmood(const APE::Tag *tag)
+{
+	return readString(tag, L"Mood");
+}
+
+std::wstring readmood(const ASF::Tag *tag)
+{
+	return readString(tag, "WM/Mood");
+}
+
+std::wstring readmood(const ID3v2::Tag *tag)
+{
+	FOR_EACH_ID3_FRAME_TIF("TMOO")
+		return fr->toString().toWString();
+	}
+	throw std::domain_error("no id3v2");
+}
+
+std::wstring readmood(const Ogg::XiphComment *tag)
+{
+	return readString(tag, "MOOD");
+}
 
 
 READER_FUNC(unsigned char, rating, return RATING_UNRATED_SET)
@@ -515,3 +564,5 @@ READER_FUNC(std::wstring, composer, throw std::domain_error("not good"))
 READER_FUNC(std::wstring, conductor, throw std::domain_error("not good"))
 READER_FUNC(std::wstring, label, throw std::domain_error("not good"))
 READER_FUNC(std::wstring, subtitle, throw std::domain_error("not good"))
+READER_FUNC(std::wstring, producer, throw std::domain_error("not good"))
+READER_FUNC(std::wstring, mood, throw std::domain_error("not good"))
