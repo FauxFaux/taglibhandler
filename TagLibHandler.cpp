@@ -141,7 +141,9 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 	{
 		const TagLib::AudioProperties *ap = taglibfile.audioProperties();
 		const TagLib::Tag *tag = taglibfile.tag();
-		if (tag->isEmpty())
+
+		// If the tag is empty, treat it as if it doesn't exist.
+		if (tag && tag->isEmpty())
 			tag = NULL;
 
 		if (ap && key == PKEY_Audio_ChannelCount)
