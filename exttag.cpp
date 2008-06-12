@@ -555,6 +555,28 @@ std::wstring readmood(const Ogg::XiphComment *tag)
 	return readString(tag, "MOOD");
 }
 
+std::wstring readcopyright(const APE::Tag *tag)
+{
+	return readString(tag, L"Copyright");
+}
+
+std::wstring readcopyright(const ASF::Tag *tag)
+{
+	return readString(tag, "WM/Copyright");
+}
+
+std::wstring readcopyright(const ID3v2::Tag *tag)
+{
+	FOR_EACH_ID3_FRAME_TIF("TCOP")
+		return fr->toString().toWString();
+	}
+	throw std::domain_error("no id3v2");
+}
+
+std::wstring readcopyright(const Ogg::XiphComment *tag)
+{
+	return readString(tag, "COPYRIGHT");
+}
 
 READER_FUNC(unsigned char, rating, return RATING_UNRATED_SET)
 READER_FUNC(std::wstring, albumArtist, throw std::domain_error("not good"))
@@ -566,3 +588,4 @@ READER_FUNC(std::wstring, label, throw std::domain_error("not good"))
 READER_FUNC(std::wstring, subtitle, throw std::domain_error("not good"))
 READER_FUNC(std::wstring, producer, throw std::domain_error("not good"))
 READER_FUNC(std::wstring, mood, throw std::domain_error("not good"))
+READER_FUNC(std::wstring, copyright, throw std::domain_error("not good"))

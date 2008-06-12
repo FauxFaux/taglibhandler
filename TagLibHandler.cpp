@@ -274,7 +274,8 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 			TRY_BSTR(producer)
 		else if (tag && key == PKEY_Music_Mood)
 			TRY_BSTR(mood)
-
+		else if (tag && key == PKEY_Copyright)
+			TRY_BSTR(copyright)
 		else
 			return S_FALSE;
 
@@ -324,7 +325,7 @@ const PROPERTYKEY keys[] = {
 	PKEY_Audio_SampleRate, PKEY_Rating, PKEY_Music_AlbumArtist,
 	PKEY_Music_Composer, PKEY_Music_Conductor,
 	PKEY_Media_Publisher, PKEY_Media_SubTitle,
-	PKEY_Media_Producer, PKEY_Music_Mood,
+	PKEY_Media_Producer, PKEY_Music_Mood, PKEY_Copyright,
 	PKEY_Keywords, PKEY_Comment, PKEY_Media_DateReleased
 };
 
