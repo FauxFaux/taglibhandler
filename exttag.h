@@ -17,3 +17,4 @@ wstrvec_t keywords(const TagLib::FileRef &fileref);
 //  then by order of apperance in the tag. Pick the first.
 SYSTEMTIME releasedate(const TagLib::FileRef &fileref);
 std::wstring composer(const TagLib::FileRef &fileref);
+std::wstring conductor(const TagLib::FileRef &fileref);

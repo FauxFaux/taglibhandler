@@ -433,10 +433,30 @@ std::wstring readcomposer(const ID3v2::Tag *tag)
 
 std::wstring readcomposer(const Ogg::XiphComment *tag)
 {
-	const StringList &sl = tag->fieldListMap()["COMPOSER"];
-	for (StringList::ConstIterator it = sl.begin(); it != sl.end(); ++it)
-		return it->toWString();
-	throw std::domain_error("no xiph");
+	return readString(tag, "COMPOSER");
+}
+
+std::wstring readconductor(const APE::Tag *tag)
+{
+	return readString(tag, L"Conductor");
+}
+
+std::wstring readconductor(const ASF::Tag *tag)
+{
+	return readString(tag, "WM/Conductor");
+}
+
+std::wstring readconductor(const ID3v2::Tag *tag)
+{
+	FOR_EACH_ID3_FRAME_TIF("TPE3")
+		return fr->toString().toWString();
+	}
+	throw std::domain_error("no id3v2");
+}
+
+std::wstring readconductor(const Ogg::XiphComment *tag)
+{
+	return readString(tag, "CONDUCTOR");
 }
 
 READER_FUNC(unsigned char, rating, return RATING_UNRATED_SET)
@@ -444,3 +464,4 @@ READER_FUNC(std::wstring, albumArtist, throw std::domain_error("not good"))
 READER_FUNC(wstrvec_t, keywords, return wstrvec_t())
 READER_FUNC(SYSTEMTIME, releasedate, return SYSTEMTIME())
 READER_FUNC(std::wstring, composer, throw std::domain_error("not good"))
+READER_FUNC(std::wstring, conductor, throw std::domain_error("not good"))
