@@ -123,6 +123,18 @@ struct Dbstr
 	}
 };
 
+#define TRY_BSTR(func)                                                \
+	try                                                               \
+	{                                                                 \
+		pPropVar->bstrVal = SysAllocString(func(taglibfile).c_str()); \
+		pPropVar->vt = VT_BSTR;                                       \
+	}                                                                 \
+	catch (std::domain_error &)                                       \
+	{                                                                 \
+		pPropVar->vt = VT_EMPTY;                                      \
+	}
+
+
 HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pPropVar)
 {
 	try
@@ -153,17 +165,7 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 			pPropVar->vt = VT_UI4;
 		}
 		else if (tag && key == PKEY_Music_AlbumArtist)
-		{
-			try
-			{
-				pPropVar->bstrVal = SysAllocString(albumArtist(taglibfile).c_str());
-				pPropVar->vt = VT_BSTR;
-			}
-			catch (std::domain_error &)
-			{
-				pPropVar->vt = VT_EMPTY;
-			}
-		}
+			TRY_BSTR(albumArtist)
 		else if (tag && key == PKEY_Music_AlbumTitle)
 		{
 			pPropVar->vt = VT_BSTR;
@@ -260,6 +262,8 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 					pPropVar->vt = VT_BSTR;
 				}
 		}
+		else if (tag && key == PKEY_Music_Composer)
+			TRY_BSTR(composer)
 		else
 			return S_FALSE;
 
@@ -268,6 +272,7 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 	catch (std::exception &e)
 	{
 		OutputDebugStringA(e.what());
+		pPropVar->vt = VT_EMPTY;
 		return ERROR_INTERNAL_ERROR;
 	}
 	catch (...)
@@ -306,6 +311,7 @@ const PROPERTYKEY keys[] = {
 	PKEY_Title, PKEY_Media_Year, PKEY_Audio_ChannelCount,
 	PKEY_Media_Duration, PKEY_Audio_EncodingBitrate,
 	PKEY_Audio_SampleRate, PKEY_Rating, PKEY_Music_AlbumArtist,
+	PKEY_Music_Composer,
 	PKEY_Keywords, PKEY_Comment, PKEY_Media_DateReleased
 };
 

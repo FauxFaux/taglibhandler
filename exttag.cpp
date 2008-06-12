@@ -106,6 +106,33 @@ const String readTXXXString(const ID3v2::Tag *tag, const String &name)
 	return sl[0];
 }
 
+std::wstring readString(const APE::Tag *tag, const std::wstring &name)
+{
+	const StringList& lst = tag->itemListMap()[name].values();
+	if (lst.size())
+		return lst[0].toWString();
+	throw std::domain_error("no ape");
+}
+
+std::wstring readString(const ASF::Tag *tag, const std::string &name)
+{
+	// Ew ew ew.
+	const ASF::AttributeListMap &alm = const_cast<ASF::Tag *>(tag)->attributeListMap();
+	if (alm.contains(name))
+		return alm[name][0].toString().toWString();
+
+	throw std::domain_error("no asf");
+
+}
+
+std::wstring readString(const Ogg::XiphComment *tag, const std::string &name)
+{
+	const StringList &sl = tag->fieldListMap()[name];
+	for (StringList::ConstIterator it = sl.begin(); it != sl.end(); ++it)
+		return it->toWString();
+	throw std::domain_error("no xiph");
+}
+
 unsigned char normaliseRating(int rat)
 {
 	if (rat > 0)
@@ -189,22 +216,12 @@ unsigned char readrating(const Ogg::XiphComment *tag)
 
 std::wstring readalbumArtist(const APE::Tag *tag)
 {
-	const StringList& lst = tag->itemListMap()[L"Album Artist"].values();
-	if (lst.size())
-		return lst[0].toWString();
-	throw std::domain_error("no album artist");
+	return readString(tag, L"Album Artist");
 }
 
 std::wstring readalbumArtist(const ASF::Tag *tag)
 {
-	const char *name = "WM/AlbumArtist";
-
-	// Ew ew ew.
-	const ASF::AttributeListMap &alm = const_cast<ASF::Tag *>(tag)->attributeListMap();
-	if (alm.contains(name))
-		return alm[name][0].toString().toWString();
-
-	throw std::domain_error("no asf");
+	return readString(tag, "WM/AlbumArtist");
 }
 
 std::wstring readalbumArtist(const ID3v2::Tag *tag)
@@ -217,10 +234,7 @@ std::wstring readalbumArtist(const ID3v2::Tag *tag)
 
 std::wstring readalbumArtist(const Ogg::XiphComment *tag)
 {
-	const StringList &sl = tag->fieldListMap()["ALBUMARTIST"];
-	for (StringList::ConstIterator it = sl.begin(); it != sl.end(); ++it)
-		return it->toWString();
-	throw std::domain_error("no xiph");
+	return readString(tag, "ALBUMARTIST");
 }
 
 wstrvec_t toVector(StringList::ConstIterator beg, StringList::ConstIterator end)
@@ -399,8 +413,34 @@ SYSTEMTIME readreleasedate(const Ogg::XiphComment *tag)
 	return parseDate(toVector(tag->fieldListMap()["DATE"]));
 }
 
+std::wstring readcomposer(const APE::Tag *tag)
+{
+	return readString(tag, L"Composer");
+}
+
+std::wstring readcomposer(const ASF::Tag *tag)
+{
+	return readString(tag, "WM/Composer");
+}
+
+std::wstring readcomposer(const ID3v2::Tag *tag)
+{
+	FOR_EACH_ID3_FRAME_TIF("TCOM")
+		return fr->toString().toWString();
+	}
+	throw std::domain_error("no id3v2");
+}
+
+std::wstring readcomposer(const Ogg::XiphComment *tag)
+{
+	const StringList &sl = tag->fieldListMap()["COMPOSER"];
+	for (StringList::ConstIterator it = sl.begin(); it != sl.end(); ++it)
+		return it->toWString();
+	throw std::domain_error("no xiph");
+}
 
 READER_FUNC(unsigned char, rating, return RATING_UNRATED_SET)
 READER_FUNC(std::wstring, albumArtist, throw std::domain_error("not good"))
 READER_FUNC(wstrvec_t, keywords, return wstrvec_t())
 READER_FUNC(SYSTEMTIME, releasedate, return SYSTEMTIME())
+READER_FUNC(std::wstring, composer, throw std::domain_error("not good"))
