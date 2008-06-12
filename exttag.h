@@ -18,3 +18,5 @@ wstrvec_t keywords(const TagLib::FileRef &fileref);
 SYSTEMTIME releasedate(const TagLib::FileRef &fileref);
 std::wstring composer(const TagLib::FileRef &fileref);
 std::wstring conductor(const TagLib::FileRef &fileref);
+std::wstring subtitle(const TagLib::FileRef &fileref);
+std::wstring label(const TagLib::FileRef &fileref);

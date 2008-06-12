@@ -459,9 +459,59 @@ std::wstring readconductor(const Ogg::XiphComment *tag)
 	return readString(tag, "CONDUCTOR");
 }
 
+std::wstring readlabel(const APE::Tag *tag)
+{
+	return readString(tag, L"Label");
+}
+
+std::wstring readlabel(const ASF::Tag *tag)
+{
+	return readString(tag, "WM/Publisher");
+}
+
+std::wstring readlabel(const ID3v2::Tag *tag)
+{
+	FOR_EACH_ID3_FRAME_TIF("TPUB")
+		return fr->toString().toWString();
+	}
+	throw std::domain_error("no id3v2");
+}
+
+std::wstring readlabel(const Ogg::XiphComment *tag)
+{
+	return readString(tag, "LABEL");
+}
+
+std::wstring readsubtitle(const APE::Tag *tag)
+{
+	return readString(tag, L"Subtitle");
+}
+
+std::wstring readsubtitle(const ASF::Tag *tag)
+{
+	return readString(tag, "WM/SubTitle");
+}
+
+std::wstring readsubtitle(const ID3v2::Tag *tag)
+{
+	FOR_EACH_ID3_FRAME_TIF("TIT3")
+		return fr->toString().toWString();
+	}
+	throw std::domain_error("no id3v2");
+}
+
+std::wstring readsubtitle(const Ogg::XiphComment *tag)
+{
+	return readString(tag, "SUBTITLE");
+}
+
+
+
 READER_FUNC(unsigned char, rating, return RATING_UNRATED_SET)
 READER_FUNC(std::wstring, albumArtist, throw std::domain_error("not good"))
 READER_FUNC(wstrvec_t, keywords, return wstrvec_t())
 READER_FUNC(SYSTEMTIME, releasedate, return SYSTEMTIME())
 READER_FUNC(std::wstring, composer, throw std::domain_error("not good"))
 READER_FUNC(std::wstring, conductor, throw std::domain_error("not good"))
+READER_FUNC(std::wstring, label, throw std::domain_error("not good"))
+READER_FUNC(std::wstring, subtitle, throw std::domain_error("not good"))
