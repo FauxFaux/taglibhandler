@@ -226,7 +226,7 @@ std::wstring readalbumArtist(const ASF::Tag *tag)
 
 std::wstring readalbumArtist(const ID3v2::Tag *tag)
 {
-	FOR_EACH_ID3_FRAME_TIF("TPE2")
+	FOR_EACH_ID3_FRAME_TIF("TPE2") // Person 2
 		return fr->toString().toWString();
 	}
 	throw std::domain_error("no id3v2");
@@ -364,7 +364,7 @@ SYSTEMTIME readreleasedate(const ID3v2::Tag *tag)
 {
 	// Attempt to read the (sane) id3v2.4 tag:
 	wstrvec_t drcs;
-	FOR_EACH_ID3_FRAME_TIF("TDRC")
+	FOR_EACH_ID3_FRAME_TIF("TDRC") // Date of ReCording
 		drcs.push_back(fr->toString().toWString());
 	}
 
@@ -374,7 +374,7 @@ SYSTEMTIME readreleasedate(const ID3v2::Tag *tag)
 
 	// Abandon all hope and try to deal with 2.3's failure:
 	tlstrvec_t years, days;
-	FOR_EACH_ID3_FRAME_TIF("TYER")
+	FOR_EACH_ID3_FRAME_TIF("TYER") // Year
 		years.push_back(fr->toString());
 	}
 
@@ -383,7 +383,7 @@ SYSTEMTIME readreleasedate(const ID3v2::Tag *tag)
 		return SYSTEMTIME();
 
 	// DDMM, guaranteed 4 chars long.
-	FOR_EACH_ID3_FRAME_TIF("TDAT")
+	FOR_EACH_ID3_FRAME_TIF("TDAT") // Date
 		days.push_back(fr->toString());
 	}
 
@@ -425,7 +425,7 @@ std::wstring readcomposer(const ASF::Tag *tag)
 
 std::wstring readcomposer(const ID3v2::Tag *tag)
 {
-	FOR_EACH_ID3_FRAME_TIF("TCOM")
+	FOR_EACH_ID3_FRAME_TIF("TCOM") // Composer
 		return fr->toString().toWString();
 	}
 	throw std::domain_error("no id3v2");
@@ -448,7 +448,7 @@ std::wstring readconductor(const ASF::Tag *tag)
 
 std::wstring readconductor(const ID3v2::Tag *tag)
 {
-	FOR_EACH_ID3_FRAME_TIF("TPE3")
+	FOR_EACH_ID3_FRAME_TIF("TPE3") // Person 3
 		return fr->toString().toWString();
 	}
 	throw std::domain_error("no id3v2");
@@ -471,7 +471,7 @@ std::wstring readlabel(const ASF::Tag *tag)
 
 std::wstring readlabel(const ID3v2::Tag *tag)
 {
-	FOR_EACH_ID3_FRAME_TIF("TPUB")
+	FOR_EACH_ID3_FRAME_TIF("TPUB") // Publisher
 		return fr->toString().toWString();
 	}
 	throw std::domain_error("no id3v2");
@@ -494,7 +494,7 @@ std::wstring readsubtitle(const ASF::Tag *tag)
 
 std::wstring readsubtitle(const ID3v2::Tag *tag)
 {
-	FOR_EACH_ID3_FRAME_TIF("TIT3")
+	FOR_EACH_ID3_FRAME_TIF("TIT3") // Title 3
 		return fr->toString().toWString();
 	}
 	throw std::domain_error("no id3v2");
@@ -518,8 +518,8 @@ std::wstring readproducer(const ASF::Tag *tag)
 // TIPL is a set of pairs (a map), even (from/including zero) -> key, odd -> value.
 std::wstring readproducer(const ID3v2::Tag *tag)
 {
-	const ID3v2::FrameList &fl = tag->frameListMap()["TIPL"];
-	for (size_t i = 0; i < fl.size(); i+=2)
+	const ID3v2::FrameList &fl = tag->frameListMap()["TIPL"]; // Involved People
+	for (TagLib::uint i = 0; i < fl.size(); i+=2)
 		if (ID3v2::TextIdentificationFrame *fr = dynamic_cast<ID3v2::TextIdentificationFrame *>(fl[i]))
 			if (fr->toString() == L"producer")
 				return dynamic_cast<ID3v2::TextIdentificationFrame *>(fl[i+1])
@@ -544,7 +544,7 @@ std::wstring readmood(const ASF::Tag *tag)
 
 std::wstring readmood(const ID3v2::Tag *tag)
 {
-	FOR_EACH_ID3_FRAME_TIF("TMOO")
+	FOR_EACH_ID3_FRAME_TIF("TMOO") // Mood
 		return fr->toString().toWString();
 	}
 	throw std::domain_error("no id3v2");
@@ -567,7 +567,7 @@ std::wstring readcopyright(const ASF::Tag *tag)
 
 std::wstring readcopyright(const ID3v2::Tag *tag)
 {
-	FOR_EACH_ID3_FRAME_TIF("TCOP")
+	FOR_EACH_ID3_FRAME_TIF("TCOP") // Copyright
 		return fr->toString().toWString();
 	}
 	throw std::domain_error("no id3v2");
@@ -576,6 +576,31 @@ std::wstring readcopyright(const ID3v2::Tag *tag)
 std::wstring readcopyright(const Ogg::XiphComment *tag)
 {
 	return readString(tag, "COPYRIGHT");
+}
+
+std::wstring readpartofset(const APE::Tag *tag)
+{
+	// This may need some format mangling in some cases?
+	return readString(tag, L"Disc");
+}
+
+std::wstring readpartofset(const ASF::Tag *tag)
+{
+	return readString(tag, "WM/PartOfSet");
+}
+
+std::wstring readpartofset(const ID3v2::Tag *tag)
+{
+	FOR_EACH_ID3_FRAME_TIF("TPOS") // Part Of Set
+		return fr->toString().toWString();
+	}
+	throw std::domain_error("no id3v2");
+}
+
+std::wstring readpartofset(const Ogg::XiphComment *tag)
+{
+	// This is only the first part of the tuple, Picard does not write Total Discs to xiph comments.
+	return readString(tag, "DISCNUMBER");
 }
 
 READER_FUNC(unsigned char, rating, return RATING_UNRATED_SET)
@@ -589,3 +614,4 @@ READER_FUNC(std::wstring, subtitle, throw std::domain_error("not good"))
 READER_FUNC(std::wstring, producer, throw std::domain_error("not good"))
 READER_FUNC(std::wstring, mood, throw std::domain_error("not good"))
 READER_FUNC(std::wstring, copyright, throw std::domain_error("not good"))
+READER_FUNC(std::wstring, partofset, throw std::domain_error("not good"))

@@ -23,3 +23,9 @@ std::wstring label(const TagLib::FileRef &fileref);
 std::wstring producer(const TagLib::FileRef &fileref);
 std::wstring mood(const TagLib::FileRef &fileref);
 std::wstring copyright(const TagLib::FileRef &fileref);
+
+// Part of set, based on the WMA documentation, 
+// http://msdn.microsoft.com/en-us/library/aa391979(VS.85).aspx
+// is returned as a pair of values (integers?) seperated by a forward slash,
+// representing the part number and total parts, ie. disc number and discs in set.
+std::wstring partofset(const TagLib::FileRef &fileref);
