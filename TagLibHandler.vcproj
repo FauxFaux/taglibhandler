@@ -216,7 +216,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="shlwapi.lib shell32.lib crypt32.lib propsys.lib msxml6.lib ole32.lib comsupp.lib"
+				AdditionalDependencies="tag.lib shlwapi.lib shell32.lib crypt32.lib propsys.lib msxml6.lib ole32.lib comsupp.lib"
 				LinkIncremental="1"
 				ModuleDefinitionFile="TagLibHandler.def"
 				GenerateDebugInformation="true"
