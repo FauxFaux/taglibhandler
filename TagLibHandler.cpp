@@ -30,6 +30,20 @@
 void DllAddRef();
 void DllRelease();
 
+const PROPERTYKEY keys[] = {
+	PKEY_Music_AlbumTitle, PKEY_Music_Artist,
+	PKEY_Music_TrackNumber, PKEY_Music_Genre,
+	PKEY_Title, PKEY_Media_Year, PKEY_Audio_ChannelCount,
+	PKEY_Media_Duration, PKEY_Audio_EncodingBitrate,
+	PKEY_Audio_SampleRate, PKEY_Rating, PKEY_Music_AlbumArtist,
+	PKEY_Music_Composer, PKEY_Music_Conductor,
+	PKEY_Media_Publisher, PKEY_Media_SubTitle,
+	PKEY_Media_Producer, PKEY_Music_Mood, PKEY_Copyright,
+	PKEY_Music_PartOfSet,
+	PKEY_Keywords, PKEY_Comment, PKEY_Media_DateReleased
+};
+
+
 // Debug property handler class definition
 class CTagLibPropertyStore :
 	public IPropertyStore,
@@ -48,23 +62,27 @@ public:
 			QITABENT(CTagLibPropertyStore, IInitializeWithStream),
 			{ 0 },
 		};
+		OutputDebugStr(L"TLPS QueryInterface");
 		return QISearch(this, qit, riid, ppv);
 	}
 
 	IFACEMETHODIMP_(ULONG) AddRef()
 	{
 		DllAddRef();
+		OutputDebugStr(L"TLPS AddRef");
 		return InterlockedIncrement(&_cRef);
 	}
 
 	IFACEMETHODIMP_(ULONG) Release()
 	{
+		OutputDebugStr(L"TLPS Release enter");
 		DllRelease();
 		ULONG cRef = InterlockedDecrement(&_cRef);
 		if (!cRef)
 		{
 			delete this;
 		}
+		OutputDebugStr(L"TLPS Release leave");
 		return cRef;
 	}
 
@@ -85,15 +103,26 @@ protected:
 	CTagLibPropertyStore() : _cRef(1), _pStream(NULL), _grfMode(0)
 	{
 		DllAddRef();
+		OutputDebugStr(L"TLPS()");
+		if (FAILED(PSCreateMemoryPropertyStore(IID_PPV_ARGS(&_pCache))))
+			OutputDebugStr(L"create mem fail");
+		
+		pv.vt = VT_EMPTY;
+		for (size_t i = 0; i < ARRAYSIZE(keys); ++i)
+			_pCache->SetValue(keys[i], pv);
 	}
 
 	~CTagLibPropertyStore()
 	{
 		SAFE_RELEASE(_pStream);
+		SAFE_RELEASE(_pCache);
+		OutputDebugStr(L"~TLPS");
 	}
 
 	IStream*             _pStream; // data stream passed in to Initialize, and saved to on Commit
+	IPropertyStoreCache* _pCache;
 	DWORD                _grfMode; // STGM mode passed to Initialize
+	PROPVARIANT pv;
 	TagLib::FileRef taglibfile;
 private:
 
@@ -110,15 +139,18 @@ struct Dbstr
 	const BSTR val;
 	Dbstr(const std::wstring &str) : val(SysAllocString(str.c_str()))
 	{
+		OutputDebugStr(L"bstr()");
 	}
 
 	~Dbstr()
 	{
+		OutputDebugStr(L"~bstr");
 		SysFreeString(val);
 	}
 
 	operator BSTR()
 	{
+		OutputDebugStr(L"op bstr");
 		return val;
 	}
 };
@@ -126,8 +158,7 @@ struct Dbstr
 #define TRY_BSTR(func)                                                \
 	try                                                               \
 	{                                                                 \
-		pPropVar->bstrVal = SysAllocString(func(taglibfile).c_str()); \
-		pPropVar->vt = VT_BSTR;                                       \
+	InitPropVariantFromString(func(taglibfile).c_str(), pPropVar);	  \
 	}                                                                 \
 	catch (std::domain_error &)                                       \
 	{                                                                 \
@@ -135,8 +166,9 @@ struct Dbstr
 	}
 
 
-HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pPropVar)
+HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, PROPVARIANT *pPropVar)
 {
+	OutputDebugStr(L"getvalue enter");
 	try
 	{
 		const TagLib::AudioProperties *ap = taglibfile.audioProperties();
@@ -169,25 +201,13 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 		else if (tag && key == PKEY_Music_AlbumArtist)
 			TRY_BSTR(albumArtist)
 		else if (tag && key == PKEY_Music_AlbumTitle)
-		{
-			pPropVar->vt = VT_BSTR;
-			pPropVar->bstrVal = SysAllocString(tag->album().toWString().c_str());
-		}
+			InitPropVariantFromString(tag->album().toWString().c_str(), pPropVar);
 		else if (tag && key == PKEY_Music_Artist)
-		{
-			pPropVar->vt = VT_BSTR;
-			pPropVar->bstrVal = SysAllocString(tag->artist().toWString().c_str());
-		}
+			InitPropVariantFromString(tag->artist().toWString().c_str(), pPropVar);
 		else if (tag && key == PKEY_Music_Genre)
-		{
-			pPropVar->vt = VT_BSTR;
-			pPropVar->bstrVal = SysAllocString(tag->genre().toWString().c_str());
-		}
+			InitPropVariantFromString(tag->genre().toWString().c_str(), pPropVar);
 		else if (tag && key == PKEY_Title)
-		{
-			pPropVar->vt = VT_BSTR;
-			pPropVar->pwszVal = SysAllocString(tag->title().toWString().c_str());
-		}
+			InitPropVariantFromString(tag->title().toWString().c_str(), pPropVar);
 		else if (tag && key == PKEY_Music_TrackNumber)
 		{
 			if (tag->track() == 0)
@@ -236,10 +256,7 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 			}
 		}
 		else if (tag && key == PKEY_Comment)
-		{
-			pPropVar->bstrVal = SysAllocString(tag->comment().toWString().c_str());
-			pPropVar->vt = VT_BSTR;
-		}
+			InitPropVariantFromString(tag->comment().toWString().c_str(), pPropVar);
 		else if (tag && key == PKEY_Media_DateReleased)
 		{
 			SYSTEMTIME date = releasedate(taglibfile);
@@ -260,8 +277,7 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 				if (int year = tag->year())
 				{
 					std::wstringstream ss; ss << year;
-					pPropVar->bstrVal = SysAllocString(ss.str().c_str());
-					pPropVar->vt = VT_BSTR;
+					InitPropVariantFromString(ss.str().c_str(), pPropVar);
 				}
 		}
 		else if (tag && key == PKEY_Music_Composer)
@@ -282,7 +298,7 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 			TRY_BSTR(partofset)
 		else
 			return S_FALSE;
-
+		OutputDebugStr(L"getvalue leave ok");
 		return S_OK;
 	}
 	catch (std::exception &e)
@@ -305,6 +321,7 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, __out PROPVARIANT *pP
 
 HRESULT CTagLibPropertyStore::CreateInstance(REFIID riid, void **ppv)
 {
+	OutputDebugStr(L"createinstance");
 	HRESULT hr = E_OUTOFMEMORY;
 	CTagLibPropertyStore *pNew = new CTagLibPropertyStore();
 	if (pNew)
@@ -312,55 +329,54 @@ HRESULT CTagLibPropertyStore::CreateInstance(REFIID riid, void **ppv)
 		hr = pNew->QueryInterface(riid, ppv);
 		SAFE_RELEASE(pNew);
 	}
-
+	if (SUCCEEDED(hr))
+		OutputDebugStr(L"createinstance ok");
+	else
+		OutputDebugStr(L"createinstance fail");
 	return hr;
 }
 
 HRESULT CTagLibPropertyStore_CreateInstance(REFIID riid, void **ppv)
 {
+	OutputDebugStr(L"_createinstance");
 	return CTagLibPropertyStore::CreateInstance(riid, ppv);
 }
 
-const PROPERTYKEY keys[] = {
-	PKEY_Music_AlbumTitle, PKEY_Music_Artist,
-	PKEY_Music_TrackNumber, PKEY_Music_Genre,
-	PKEY_Title, PKEY_Media_Year, PKEY_Audio_ChannelCount,
-	PKEY_Media_Duration, PKEY_Audio_EncodingBitrate,
-	PKEY_Audio_SampleRate, PKEY_Rating, PKEY_Music_AlbumArtist,
-	PKEY_Music_Composer, PKEY_Music_Conductor,
-	PKEY_Media_Publisher, PKEY_Media_SubTitle,
-	PKEY_Media_Producer, PKEY_Music_Mood, PKEY_Copyright,
-	PKEY_Music_PartOfSet,
-	PKEY_Keywords, PKEY_Comment, PKEY_Media_DateReleased
-};
-
 HRESULT CTagLibPropertyStore::GetCount(__out DWORD *pcProps)
 {
-	return ARRAYSIZE(keys);
+	OutputDebugStr(L"count");
+	*pcProps = ARRAYSIZE(keys);
+	return S_OK;
 }
 
 HRESULT CTagLibPropertyStore::GetAt(DWORD iProp, __out PROPERTYKEY *pkey)
 {
-	pkey = const_cast<PROPERTYKEY*>(&keys[iProp]);
-	return S_OK;
+	OutputDebugStr(L"at enter");
+	//pkey = const_cast<PROPERTYKEY*>(&keys[iProp]);
+	return _pCache->GetAt(iProp, pkey);
+//	OutputDebugStr(L"at leave");
+//	return S_OK;
 }
 
 // SetValue just updates the internal value cache
-HRESULT CTagLibPropertyStore::SetValue(REFPROPERTYKEY key, REFPROPVARIANT propVar)
+HRESULT CTagLibPropertyStore::SetValue(REFPROPERTYKEY, REFPROPVARIANT)
 {
+	OutputDebugStr(L"setvalue");
 	return STG_E_ACCESSDENIED; // Ok, but read-only.
 }
 
 // Commit writes the internal value cache back out to the stream passed to Initialize
 HRESULT CTagLibPropertyStore::Commit()
 {
+	OutputDebugStr(L"commit");
 	return S_OK; // Ok, we wrote all we could (nothing).
 }
 
 // Indicates whether the users should be able to edit values for the given property key
 // S_OK | S_FALSE
-HRESULT CTagLibPropertyStore::IsPropertyWritable(REFPROPERTYKEY key)
+HRESULT CTagLibPropertyStore::IsPropertyWritable(REFPROPERTYKEY)
 {
+	OutputDebugStr(L"writable?");
 	return S_FALSE;
 }
 
@@ -428,8 +444,10 @@ struct IStreamAccessor : public TagLib::FileAccessor
 // S_OK | E_UNEXPECTED | ERROR_READ_FAULT | ERROR_FILE_CORRUPT | ERROR_INTERNAL_ERROR
 HRESULT CTagLibPropertyStore::Initialize(IStream *pStream, DWORD grfMode)
 {
+	OutputDebugStr(L"init stream");
 	taglibfile = TagLib::FileRef(new IStreamAccessor(pStream));
 	if (taglibfile.isNull())
 		return ERROR_FILE_CORRUPT;
+	OutputDebugStr(L"init stream ok");
 	return S_OK;
 }

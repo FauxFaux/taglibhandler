@@ -7,7 +7,7 @@ LONG g_cLocks = 0;
 HMODULE g_hmodThis;
 
 // Standard DLL functions
-BOOL APIENTRY DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
+BOOL APIENTRY DllMain(HINSTANCE hModule, DWORD, LPVOID)
 {
 	g_hmodThis = (HMODULE)hModule;
 
