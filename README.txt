@@ -1,9 +1,7 @@
 Taglib Property Handler: http://sourceforge.net/projects/taglibhandler/
 
--- Alpha release.
-
-This is an alpha release. It's hard to install, and, as all of the components are built as debug versions, 
-  it should be very slow. Don't use it if you don't know what you're doing.
+This is the first public release, it is not widely tested.
+Please report any problems, no matter how small.
 
 -- Install instructions (Vista only):
 
@@ -41,7 +39,7 @@ This is an alpha release. It's hard to install, and, as all of the components ar
 -- Lost functionality by using Taglib Handler instead of the Windows Default.
 
    You will lose: The ability to write to tags, and the ability to view some tags.
-   You will gain: The ability to read id3v2.4 tags with utf-8.
+   You will gain: The ability to read a whole new set of tags, including id3v2.4 tags with utf-8.
 
 
 -- License (MIT):

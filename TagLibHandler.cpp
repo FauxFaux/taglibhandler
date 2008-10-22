@@ -62,27 +62,23 @@ public:
 			QITABENT(CTagLibPropertyStore, IInitializeWithStream),
 			{ 0 },
 		};
-		OutputDebugStr(L"TLPS QueryInterface");
 		return QISearch(this, qit, riid, ppv);
 	}
 
 	IFACEMETHODIMP_(ULONG) AddRef()
 	{
 		DllAddRef();
-		OutputDebugStr(L"TLPS AddRef");
 		return InterlockedIncrement(&_cRef);
 	}
 
 	IFACEMETHODIMP_(ULONG) Release()
 	{
-		OutputDebugStr(L"TLPS Release enter");
 		DllRelease();
 		ULONG cRef = InterlockedDecrement(&_cRef);
 		if (!cRef)
 		{
 			delete this;
 		}
-		OutputDebugStr(L"TLPS Release leave");
 		return cRef;
 	}
 
@@ -103,10 +99,10 @@ protected:
 	CTagLibPropertyStore() : _cRef(1), _pStream(NULL), _grfMode(0)
 	{
 		DllAddRef();
-		OutputDebugStr(L"TLPS()");
 		if (FAILED(PSCreateMemoryPropertyStore(IID_PPV_ARGS(&_pCache))))
-			OutputDebugStr(L"create mem fail");
+			OutputDebugStr(L"TaglibHandler: PSCreateMemoryPropertyStore failed");
 		
+		PROPVARIANT pv = {};
 		pv.vt = VT_EMPTY;
 		for (size_t i = 0; i < ARRAYSIZE(keys); ++i)
 			_pCache->SetValue(keys[i], pv);
@@ -116,13 +112,11 @@ protected:
 	{
 		SAFE_RELEASE(_pStream);
 		SAFE_RELEASE(_pCache);
-		OutputDebugStr(L"~TLPS");
 	}
 
 	IStream*             _pStream; // data stream passed in to Initialize, and saved to on Commit
 	IPropertyStoreCache* _pCache;
 	DWORD                _grfMode; // STGM mode passed to Initialize
-	PROPVARIANT pv;
 	TagLib::FileRef taglibfile;
 private:
 
@@ -158,7 +152,7 @@ struct Dbstr
 #define TRY_BSTR(func)                                                \
 	try                                                               \
 	{                                                                 \
-	InitPropVariantFromString(func(taglibfile).c_str(), pPropVar);	  \
+		InitPropVariantFromString(func(taglibfile).c_str(), pPropVar);\
 	}                                                                 \
 	catch (std::domain_error &)                                       \
 	{                                                                 \
@@ -168,7 +162,6 @@ struct Dbstr
 
 HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, PROPVARIANT *pPropVar)
 {
-	OutputDebugStr(L"getvalue enter");
 	try
 	{
 		const TagLib::AudioProperties *ap = taglibfile.audioProperties();
@@ -298,7 +291,6 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, PROPVARIANT *pPropVar
 			TRY_BSTR(partofset)
 		else
 			return S_FALSE;
-		OutputDebugStr(L"getvalue leave ok");
 		return S_OK;
 	}
 	catch (std::exception &e)
@@ -321,7 +313,6 @@ HRESULT CTagLibPropertyStore::GetValue(REFPROPERTYKEY key, PROPVARIANT *pPropVar
 
 HRESULT CTagLibPropertyStore::CreateInstance(REFIID riid, void **ppv)
 {
-	OutputDebugStr(L"createinstance");
 	HRESULT hr = E_OUTOFMEMORY;
 	CTagLibPropertyStore *pNew = new CTagLibPropertyStore();
 	if (pNew)
@@ -329,46 +320,34 @@ HRESULT CTagLibPropertyStore::CreateInstance(REFIID riid, void **ppv)
 		hr = pNew->QueryInterface(riid, ppv);
 		SAFE_RELEASE(pNew);
 	}
-	if (SUCCEEDED(hr))
-		OutputDebugStr(L"createinstance ok");
-	else
-		OutputDebugStr(L"createinstance fail");
 	return hr;
 }
 
 HRESULT CTagLibPropertyStore_CreateInstance(REFIID riid, void **ppv)
 {
-	OutputDebugStr(L"_createinstance");
 	return CTagLibPropertyStore::CreateInstance(riid, ppv);
 }
 
 HRESULT CTagLibPropertyStore::GetCount(__out DWORD *pcProps)
 {
-	OutputDebugStr(L"count");
 	*pcProps = ARRAYSIZE(keys);
 	return S_OK;
 }
 
 HRESULT CTagLibPropertyStore::GetAt(DWORD iProp, __out PROPERTYKEY *pkey)
 {
-	OutputDebugStr(L"at enter");
-	//pkey = const_cast<PROPERTYKEY*>(&keys[iProp]);
 	return _pCache->GetAt(iProp, pkey);
-//	OutputDebugStr(L"at leave");
-//	return S_OK;
 }
 
 // SetValue just updates the internal value cache
 HRESULT CTagLibPropertyStore::SetValue(REFPROPERTYKEY, REFPROPVARIANT)
 {
-	OutputDebugStr(L"setvalue");
 	return STG_E_ACCESSDENIED; // Ok, but read-only.
 }
 
 // Commit writes the internal value cache back out to the stream passed to Initialize
 HRESULT CTagLibPropertyStore::Commit()
 {
-	OutputDebugStr(L"commit");
 	return S_OK; // Ok, we wrote all we could (nothing).
 }
 
@@ -376,7 +355,6 @@ HRESULT CTagLibPropertyStore::Commit()
 // S_OK | S_FALSE
 HRESULT CTagLibPropertyStore::IsPropertyWritable(REFPROPERTYKEY)
 {
-	OutputDebugStr(L"writable?");
 	return S_FALSE;
 }
 
@@ -444,10 +422,8 @@ struct IStreamAccessor : public TagLib::FileAccessor
 // S_OK | E_UNEXPECTED | ERROR_READ_FAULT | ERROR_FILE_CORRUPT | ERROR_INTERNAL_ERROR
 HRESULT CTagLibPropertyStore::Initialize(IStream *pStream, DWORD grfMode)
 {
-	OutputDebugStr(L"init stream");
 	taglibfile = TagLib::FileRef(new IStreamAccessor(pStream));
 	if (taglibfile.isNull())
 		return ERROR_FILE_CORRUPT;
-	OutputDebugStr(L"init stream ok");
 	return S_OK;
 }

@@ -1,13 +1,16 @@
 rem @echo off
 if not exist pkg mkdir pkg
 
-copy Debug\tlhsetup2.exe pkg
-copy Debug\tlhsetup2.pdb pkg
-copy Debug\TaglibHandler.dll pkg
-copy Debug\TaglibHandler.pdb pkg
+set RELEASE=%1
+if "%RELEASE%" == "" set RELEASE=Debug
+
+copy %RELEASE%\tlhsetup2.exe pkg
+copy %RELEASE%\tlhsetup2.pdb pkg
+copy %RELEASE%\TaglibHandler.dll pkg
+copy %RELEASE%\TaglibHandler.pdb pkg
 if not exist pkg\x64 mkdir pkg\x64
-copy x64\Debug\TaglibHandler.dll pkg\x64
-copy x64\Debug\TaglibHandler.pdb pkg\x64
+copy x64\%RELEASE%\TaglibHandler.dll pkg\x64
+copy x64\%RELEASE%\TaglibHandler.pdb pkg\x64
 
 copy README.txt pkg\README.txt
 
