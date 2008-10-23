@@ -276,7 +276,7 @@ public:
 		try
 		{
 			std::wstring dllname(L"taglibhandler.dll");
-			std::wstring pdbname(L"taglibhandler.pdb");
+			//std::wstring pdbname(L"taglibhandler.pdb");
 			std::wstring dlltargetx86(installloc_x86 + dllname),
 				dlltargetx64(installloc_x64 + dllname);
 			std::wstring x64suffix(L"x64\\");
@@ -293,14 +293,14 @@ public:
 
 			SetElementText(TDE_MAIN_INSTRUCTION, L"Copying files..."); Sleep(0);
 			copyFile(dllname, dlltargetx86); SetProgressBarPos(20); Sleep(0);
-			copyFile(pdbname, installloc_x86 + pdbname); SetProgressBarPos(30); Sleep(0);
+			//copyFile(pdbname, installloc_x86 + pdbname); SetProgressBarPos(30); Sleep(0);
 
 			if (onx64)
 			{
 				NoWoW64 nw;
 				copyFile(x64suffix + dllname, dlltargetx64);
 				SetProgressBarPos(40); Sleep(0);
-				copyFile(x64suffix + pdbname, installloc_x64 + pdbname);
+				//copyFile(x64suffix + pdbname, installloc_x64 + pdbname);
 				SetProgressBarPos(50); Sleep(0);
 			}
 
