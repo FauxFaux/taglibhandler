@@ -1,6 +1,6 @@
 Taglib Property Handler: http://sourceforge.net/projects/taglibhandler/
 
-This is the first public release, it is not widely tested.
+This is the first public release with aif/m4a/etc. enabled, it is not widely tested.
 Please report any problems, no matter how small.
 
 -- Install instructions (Vista only):
@@ -41,6 +41,14 @@ Please report any problems, no matter how small.
    You will lose: The ability to write to tags, and the ability to view some tags.
    You will gain: The ability to read a whole new set of tags, including id3v2.4 tags with utf-8.
 
+-- Development environment:
+     - Vista SP2.
+     - VS2008 SP1.
+     - Header-only libraries from Boost 1.40.
+     - loki-0.1.7.7
+     - http://wtl.svn.sourceforge.net/svnroot/wtl/trunk/wtl@404
+     - taglib "branch": 0e2057cc9d1918d893a7dacfdf927dd9253b12c1, off 
+          svn://anonsvn.kde.org/home/kde/trunk/kdesupport/taglibb@1035209 (after 1.6 release)
 
 -- License (MIT):
 
