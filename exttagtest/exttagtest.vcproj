@@ -116,6 +116,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;TAGLIB_STATIC"
+				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				TreatWChar_tAsBuiltInType="false"
 				UsePrecompiledHeader="0"

@@ -6,7 +6,7 @@
 using boost::assign::map_list_of;
 
 const wchar_t default_guid[] = L"{875CB1A1-0F29-45de-A1AE-CFB4950D0B78}";
-const wchar_t *default_assoc[] = { L"mp3", L"wma" };
+const wchar_t *default_assoc[] = { L"mp3", L"wma", L"wav", L"asf" };
 
 CAppModule _Module;
 HWND msgbox = 0;
@@ -14,7 +14,8 @@ HANDLE transaction;
 
 bool onx64 = false;
 
-const wchar_t *extensions[] = { L"ogg", L"flac", L"oga", L"mp3", L"mpc", L"wv", L"spx", L"tta", L"wma" };
+const wchar_t *extensions[] = { L"ogg", L"flac", L"oga", L"mp3", L"mpc", L"wv", L"spx", L"tta", L"wma",
+	L"asf", L"m4a", L"m4b", L"m4p", L"3g2", L"mp4", L"aif", L"aiff", L"wav" };
 
 struct NoWoW64
 {
@@ -544,7 +545,14 @@ public:
 
 		const std::wstring def32 = namecache32.name(default_guid), def64 = namecache64.name(default_guid);
 
-		expanded_msg = expanded_msg + L"  • By default, only " + default_assoc[0] + L" and " + default_assoc[1] +
+		expanded_msg = expanded_msg + L"  • By default, only ";
+
+		for (size_t i=0; i<ARRAYSIZE(default_assoc); ++i)
+			expanded_msg = expanded_msg + default_assoc[i] +
+				(i == ARRAYSIZE(default_assoc) - 2 ? L" and " : 
+				(i != ARRAYSIZE(default_assoc) - 1 ? L", " : L"")); 
+
+		expanded_msg = expanded_msg + 
 			L" have handlers, th" + (onx64 ? L"ese are" : L"is is") + L" called '" + 
 			def32 + L"'" + (onx64 ? (def32 == def64 ? L" (both 32 and 64)" : L" and '" + def64 + 
 			L"' (64)") : L"") + L".";
