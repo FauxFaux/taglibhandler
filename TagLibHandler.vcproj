@@ -198,7 +198,9 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				RuntimeLibrary="0"
+				PreprocessorDefinitions="_WIN32;TAGLIB_STATIC"
+				RuntimeLibrary="2"
+				TreatWChar_tAsBuiltInType="false"
 				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
 				WarningLevel="3"
@@ -274,7 +276,9 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				RuntimeLibrary="0"
+				PreprocessorDefinitions="_WIN32;TAGLIB_STATIC"
+				RuntimeLibrary="2"
+				TreatWChar_tAsBuiltInType="false"
 				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
 				WarningLevel="3"
