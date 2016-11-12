@@ -1,4 +1,5 @@
 ﻿#include "dllregister.h"
+#include <iostream>
 
 LONG createRegKey(const HKEY base, const LPCWSTR name, HKEY& out)
 {
@@ -63,6 +64,14 @@ HRESULT CreateRegKeyAndSetValue(const REGISTRY_ENTRY &pRegistryEntry,
 HRESULT doRegistration(LPWSTR szModuleName, 
 	LONG createKey(const HKEY,const LPCWSTR,HKEY &))
 {
+	{
+		wchar_t user_profile[MAX_PATH];
+		if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, 0, user_profile))) {
+			if (wcsstr(szModuleName, user_profile) == szModuleName)
+				std::cout << "WARNING: you are registering this module within your user folder. Search indexing will not work unless it is registered from a system-wide path." << std::endl;
+		}
+	}
+
 	// List of property-handler specific registry entries we need to create
 	const REGISTRY_ENTRY rgRegistryEntries[] =
 	{
@@ -77,14 +86,6 @@ HRESULT doRegistration(LPWSTR szModuleName,
 		},
 		{
 			HKEY_CLASSES_ROOT,
-			L"CLSID\\" SZ_CLSID_US,
-			L"ManualSafeSave",
-			REG_DWORD,
-			NULL,
-			1
-		},
-		{
-			HKEY_CLASSES_ROOT,
 			L"CLSID\\" SZ_CLSID_US L"\\InProcServer32",
 			NULL,
 			REG_SZ,
@@ -96,7 +97,7 @@ HRESULT doRegistration(LPWSTR szModuleName,
 			L"CLSID\\" SZ_CLSID_US L"\\InProcServer32",
 			L"ThreadingModel",
 			REG_SZ,
-			L"Apartment",
+			L"Both",
 			0
 		},
 

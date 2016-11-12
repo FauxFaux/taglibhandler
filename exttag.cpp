@@ -6,14 +6,14 @@
 #include <windows.h>
 #include <propkey.h>
 
-#include <asftag.h>
-#include <apetag.h>
-#include <id3v1tag.h>
-#include <id3v2tag.h>
-#include <textidentificationframe.h>
-#include <unknownframe.h>
-#include <xiphcomment.h>
-#include <mpegfile.h>
+#include <asf/asftag.h>
+#include <ape/apetag.h>
+#include <mpeg/id3v1/id3v1tag.h>
+#include <mpeg/id3v2/id3v2tag.h>
+#include <mpeg/id3v2/frames/textidentificationframe.h>
+#include <mpeg/id3v2/frames/unknownframe.h>
+#include <ogg/xiphcomment.h>
+#include <mpeg/mpegfile.h>
 
 using namespace TagLib;
 
@@ -151,7 +151,7 @@ unsigned char normaliseRating(int rat)
 						return static_cast<unsigned char>(rat*100/255.f);
 				}
 		}
-	return RATING_UNRATED_SET;
+	return 0;
 }
 
 unsigned char readrating(const APE::Tag *tag)
@@ -159,7 +159,7 @@ unsigned char readrating(const APE::Tag *tag)
 	const StringList& lst = tag->itemListMap()[L"rating"].values();
 	if (lst.size())
 		return normaliseRating(lst[0].toInt());
-	return RATING_UNRATED_SET;
+	return 0;
 }
 
 
@@ -211,7 +211,7 @@ unsigned char readrating(const Ogg::XiphComment *tag)
 	for (StringList::ConstIterator it = sl.begin(); it != sl.end(); ++it)
 		if (int i = it->toInt())
 			return normaliseRating(i);
-	return RATING_UNRATED_SET;
+	return 0;
 }
 
 std::wstring readalbumArtist(const APE::Tag *tag)
@@ -313,7 +313,7 @@ SYSTEMTIME parseDate(const wstrvec_t &vec)
 
 	for (wstrvec_t::const_iterator it = vec.begin(); it != vec.end(); ++it)
 		// more than just the year, fill it in full.
-		if (it->size() >= string("xxxx-xx-xx").size())
+		if (it->size() >= std::string("xxxx-xx-xx").size())
 		{
 			try
 			{
@@ -603,7 +603,7 @@ std::wstring readpartofset(const Ogg::XiphComment *tag)
 	return readString(tag, "DISCNUMBER");
 }
 
-READER_FUNC(unsigned char, rating, return RATING_UNRATED_SET)
+READER_FUNC(unsigned char, rating, return 0)
 READER_FUNC(std::wstring, albumArtist, throw std::domain_error("not good"))
 READER_FUNC(wstrvec_t, keywords, return wstrvec_t())
 READER_FUNC(SYSTEMTIME, releasedate, return SYSTEMTIME())

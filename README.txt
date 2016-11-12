@@ -11,14 +11,13 @@ Please report any problems, no matter how small.
 
 -- Manual install instructions:
 
-1) Register the 32-bit TagLibHandler.dll (from this directory), ie.
+1) Place TagLibHandler.dll in a system directory (i.e. NOT your user folder)
+
+2) Open an administrator command prompt and register the module:
 
     > regsvr32 TagLibHandler.dll
-
-     This will give an illogical error message if not run with sufficient permissions. Possibly:
-      >  The module "TagLibHandler.dll" was loaded but the call to DllRegisterServer failed with error code 0x80070005.
-
-1a) If you are using a 64-bit OS, also register the x64 version of the component.
+	
+1a) If you are using a 64-bit OS, consider also registering the x86 version of the component.
 
      It's worth having both installed as frequently you'll use x32 apps without realising.
 
@@ -30,11 +29,15 @@ Please report any problems, no matter how small.
 
   ie. create a Key called HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.ogg
     and set it's (Default) value to {66AC53F1-EB5D-4af9-861E-E3AE9C07EF14}.
+	
+    It's safe to replace the system associations, such as .mp3, although, at this stage, you will lose functionality by doing so.
 
-3) It's safe to replace the system associations, such as .mp3, although, at this stage, you will lose functionality by doing so.
+    You may want to back-up any data you overwrite.
 
-   You may want to back-up any data you overwrite.
+3) Register TagLibHandler as the thumbnail provider for whichever formats you like. For OGG thumbnails:
 
+  a) Create the key HKEY_CLASSES_ROOT/.ogg/ShellEx/{e357fccd-a995-4576-b01f-234630154e96}
+  b) Set its (Default) to {66AC53F1-EB5D-4af9-861E-E3AE9C07EF14}.
 
 -- Lost functionality by using Taglib Handler instead of the Windows Default.
 
@@ -42,13 +45,15 @@ Please report any problems, no matter how small.
    You will gain: The ability to read a whole new set of tags, including id3v2.4 tags with utf-8.
 
 -- Development environment:
-     - Vista SP2.
-     - VS2008 SP1.
-     - Header-only libraries from Boost 1.40.
+     - Windows 10
+     - VS 2015
+     - taglib master branch at ./taglib (last known good revision: d53ca6f7369dc7299c2991fa1fb9e4d80f534cf3)
+     - taglib CMake build output(s) at ./taglib_build_$(PlatformTarget)
+     - Header-only libraries from Boost 1.62 at ./boost
+	 
+	 For the installer:
      - loki-0.1.7.7
      - http://wtl.svn.sourceforge.net/svnroot/wtl/trunk/wtl@404
-     - taglib "branch": 0e2057cc9d1918d893a7dacfdf927dd9253b12c1, off 
-          svn://anonsvn.kde.org/home/kde/trunk/kdesupport/taglibb@1035209 (after 1.6 release)
 
 -- License (MIT):
 

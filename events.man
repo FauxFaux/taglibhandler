@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<instrumentationManifest xmlns="http://schemas.microsoft.com/win/2004/08/events" xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <instrumentation>
+    <events>
+      <provider guid="{d38d13bf-7b0d-4d04-a089-57f0c08bc15d}" name="TagLibHandler" symbol="TagLibHandler_Provider" message="$(String.TagLibHandler)"
+                resourceFileName="%ProgramFiles%\TaglibHandler\TagLibHandler.dll" messageFileName="%ProgramFiles%\TaglibHandler\TagLibHandler.dll">
+        <channels>
+          <channel chid="tlh" name="TagLibHandler" type="Debug" enabled="true"/>
+        </channels>
+        <tasks>
+          <task eventGUID="{75907162-abb3-4aff-9333-f3aeb0f5a4fa}" name="COM" value="1" message="$(String.COMTask)">
+            <opcodes>
+              <opcode name="Startup" value="11" message="$(String.COM.Startup)"/>
+              <opcode name="Shutdown" value="12" message="$(String.COM.Shutdown)"/>
+              <opcode name="Init" value="13" message="$(String.COM.Init)"/>
+            </opcodes>
+          </task>
+          <task eventGUID="{38035788-a438-4484-b91f-1fa1aca3a413}" name="PropertyProvider" value="2" message="$(String.PropertyProvider)">
+            <opcodes>
+              <opcode name="Read" message="$(String.PropertyProvider.Read)" value="11"/>
+              <opcode name="GetKey" message="$(String.PropertyProvider.GetKey)" value="12"/>
+            </opcodes>
+          </task>
+          <task eventGUID="{00c77404-6910-437a-9d5e-cff82a08bc6b}" name="ThumbnailProvider" value="3" message="$(String.ThumbnailProvider)">
+            <opcodes>
+              <opcode name="Read" message="$(String.ThumbnailProvider.Read)" value="11"/>
+            </opcodes>
+          </task>
+        </tasks>
+        <templates>
+          <template tid="T_Error">
+            <data name="Error Message" inType="win:AnsiString"/>
+          </template>
+          <template tid="T_Thumbnail">
+            <data name="Resolution" inType="win:UInt32"/>
+          </template>
+          <template tid="T_FilePath">
+            <data name="Path" inType="win:UnicodeString"/>
+          </template>
+          <template tid="T_ReadProperty_Empty">
+            <data name="Property" inType="win:UInt8" map="PropertyNames"/>
+          </template>
+          <template tid="T_ReadProperty_String">
+            <data name="Property" inType="win:UInt8" map="PropertyNames"/>
+            <data name="Value" inType="win:UnicodeString"/>
+          </template>
+          <template tid="T_ReadProperty_Int">
+            <data name="Property" inType="win:UInt8" map="PropertyNames"/>
+            <data name="Value" inType="win:UInt32"/>
+          </template>
+          <template tid="T_ReadProperty_Error">
+            <data name="Property" inType="win:UInt8" map="PropertyNames"/>
+            <data name="Error Message" inType="win:AnsiString"/>
+          </template>
+          <template tid="T_ReadProperty_Unknown">
+            <data name="Property Set" inType="win:GUID"/>
+            <data name="Property ID" inType="win:UInt32"/>
+          </template>
+        </templates>
+        <maps>
+          <valueMap name="PropertyNames">
+            <map value="0" message="$(String.AlbumTitle)"/>
+            <map value="1" message="$(String.Artist)"/>
+            <map value="2" message="$(String.TrackNumber)"/>
+            <map value="3" message="$(String.Genre)"/>
+            <map value="4" message="$(String.Title)"/>
+            <map value="5" message="$(String.Year)"/>
+            <map value="6" message="$(String.ChannelCount)"/>
+            <map value="7" message="$(String.Duration)"/>
+            <map value="8" message="$(String.EncodingBitrate)"/>
+            <map value="9" message="$(String.SampleRate)"/>
+            <map value="10" message="$(String.Rating)"/>
+            <map value="11" message="$(String.AlbumArtist)"/>
+            <map value="12" message="$(String.Composer)"/>
+            <map value="13" message="$(String.Conductor)"/>
+            <map value="14" message="$(String.Publisher)"/>
+            <map value="15" message="$(String.SubTitle)"/>
+            <map value="16" message="$(String.Producer)"/>
+            <map value="17" message="$(String.Mood)"/>
+            <map value="18" message="$(String.Copyright)"/>
+            <map value="19" message="$(String.PartOfSet)"/>
+            <map value="20" message="$(String.Keywords)"/>
+            <map value="21" message="$(String.Comment)"/>
+            <map value="22" message="$(String.DateReleased)"/>
+          </valueMap>
+        </maps>
+        <events>
+          <event value="100" task="COM" channel="tlh" symbol="Startup" level="win:Informational" opcode="Startup" message="$(String.Startup)"/>
+          <event value="101" task="COM" channel="tlh" symbol="StartupError" level="win:Error" opcode="Startup" template="T_Error" message="$(String.Startup.Error)"/>
+          <event value="110" task="COM" channel="tlh" symbol="Shutdown" level="win:Informational" opcode="Shutdown" message="$(String.Shutdown)"/>
+          <event value="120" task="COM" channel="tlh" opcode="Init" symbol="InitWithStream" level="win:Informational" message="$(String.COM.Init.Stream)"/>
+          <event value="121" task="COM" channel="tlh" opcode="Init" symbol="InitWithFile" level="win:Informational" template="T_FilePath" message="$(String.COM.Init.File)"/>
+          <event value="122" task="COM" channel="tlh" opcode="Init" symbol="InitError" template="T_Error" level="win:Error" message="$(String.COM.Init.Error)"/>
+
+          <event value="200" task="PropertyProvider" opcode="Read" template="T_ReadProperty_String" channel="tlh" symbol="ReadPropertyString" level="win:Informational" message="$(String.ReadProperty)"/>
+          <event value="201" task="PropertyProvider" opcode="Read" template="T_ReadProperty_Int" channel="tlh" symbol="ReadPropertyInt" level="win:Informational" message="$(String.ReadProperty)"/>
+          <event value="202" task="PropertyProvider" opcode="Read" template="T_ReadProperty_Empty" channel="tlh" symbol="ReadPropertyEmpty" level="win:Informational" message="$(String.ReadProperty.Empty)"/>
+          <event value="203" task="PropertyProvider" opcode="GetKey" template="T_ReadProperty_Empty" channel="tlh" symbol="GetKey" level="win:Informational" message="$(String.ReadProperty.GetKey)"/>
+          <event value="290" task="PropertyProvider" opcode="Read" template="T_ReadProperty_Error" channel="tlh" symbol="ReadProperty_Error" level="win:Error" message="$(String.ReadProperty.Error)"/>
+          <event value="291" task="PropertyProvider" opcode="Read" template="T_ReadProperty_Unknown" channel="tlh" symbol="ReadProperty_Unknown" level="win:Warning" message="$(String.ReadProperty.Unknown)"/>
+
+          <event value="300" task="ThumbnailProvider" opcode="Read" template="T_Thumbnail" channel="tlh" symbol="RequestThumbnail" level="win:Informational" message="$(String.ReadThumbnail.Request)"/>
+          <event value="301" task="ThumbnailProvider" opcode="Read" template="T_Error" channel="tlh" symbol="RequestThumbnail_Error" level="win:Error" message="$(String.ReadThumbnail.Error)"/>
+        </events>
+      </provider>
+    </events>
+  </instrumentation>
+  <localization>
+    <resources culture="en-US">
+      <stringTable>
+        <string id="TagLibHandler" value="TagLibHandler"/>
+        <string id="COMTask" value="COM"/>
+        <string id="COM.Startup" value="Startup"/>
+        <string id="COM.Shutdown" value="Shutdown"/>
+        <string id="COM.Init" value="Initialize"/>
+        <string id="COM.Init.Stream" value="TagLibHandler was initialized with a stream."/>
+        <string id="COM.Init.File" value="TagLibHandler was initialized with the file path '%1'."/>
+        <string id="COM.Init.Error" value="An error occurred during initialization:%n%n%1"/>
+
+        <string id="PropertyProvider" value="Property Provider"/>
+        <string id="PropertyProvider.Read" value="Read Property"/>
+        <string id="PropertyProvider.GetKey" value="Request Property Key"/>
+        <string id="ThumbnailProvider" value="Thumbnail Provider"/>
+        <string id="ThumbnailProvider.Read" value="Read Thumbnail"/>
+
+        <string id="Startup" value="TagLibHandler was started."/>
+        <string id="Startup.Error" value="An error occurred during starup:%n%n%1"/>
+        <string id="Shutdown" value="TagLibHandler was released."/>
+
+        <string id="ReadProperty" value="The property '%1' was requested. The returned value was '%2'."/>
+        <string id="ReadProperty.Empty" value="The property '%1' was requested. No value was found."/>
+        <string id="ReadProperty.Error" value="The property '%1' was requested. An error occurred while reading the value:%n%n%2"/>
+        <string id="ReadProperty.Unknown" value="An unrecognised property with GUID %1 and ID %2 was requested. Visit https://msdn.microsoft.com/en-us/library/cc251929.aspx to look up the property name."/>
+        <string id="ReadProperty.GetKey" value="The property key for '%1' was requested."/>
+
+        <string id="ReadThumbnail.Request" value="A thumbnail of %1x%1 pixels was requested."/>
+        <string id="ReadThumbnail.Error" value="An error occurred while reading a file thumbnail:%n%n%1"/>
+
+        <!-- Property names -->
+        <string id="AlbumTitle" value="Album Title"/>
+        <string id="Artist" value="Artist"/>
+        <string id="TrackNumber" value="Track Number"/>
+        <string id="Genre" value="Genre"/>
+        <string id="Title" value="Title"/>
+        <string id="Year" value="Year"/>
+        <string id="ChannelCount" value="Channel Count"/>
+        <string id="Duration" value="Duration"/>
+        <string id="EncodingBitrate" value="Encoding Bitrate"/>
+        <string id="SampleRate" value="Sample Rate"/>
+        <string id="Rating" value="Rating"/>
+        <string id="AlbumArtist" value="Album Artist"/>
+        <string id="Composer" value="Composer"/>
+        <string id="Conductor" value="Conductor"/>
+        <string id="Publisher" value="Publisher"/>
+        <string id="SubTitle" value="Sub Title"/>
+        <string id="Producer" value="Producer"/>
+        <string id="Mood" value="Mood"/>
+        <string id="Copyright" value="Copyright"/>
+        <string id="PartOfSet" value="Part Of Set"/>
+        <string id="Keywords" value="Keywords"/>
+        <string id="Comment" value="Comment"/>
+        <string id="DateReleased" value="Date Released"/>
+      </stringTable>
+    </resources>
+  </localization>
+</instrumentationManifest>
