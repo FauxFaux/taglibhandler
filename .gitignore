@@ -1,0 +1,14 @@
+**/ipch
+events.rc
+events.h
+*.aps
+*.bin
+*.user
+*.VC.*
+**/.vs
+**/x64/
+**/Debug/
+**/Release/
+/taglib
+/taglib_build_*
+/boost
